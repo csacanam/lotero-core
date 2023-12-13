@@ -3,7 +3,7 @@ import { useEffect } from "react";
 const SlotMachine = (): JSX.Element => {
   useEffect(() => {
     // Ejecutar la lógica del juego cuando se carga la página
-    //play();
+    play();
   }, []);
 
   const play = (): void => {
