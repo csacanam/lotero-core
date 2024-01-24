@@ -5,6 +5,7 @@ pragma solidity >=0.7.0 <0.9.0;
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "hardhat/console.sol";
 
 contract SlotMachine is Ownable, VRFConsumerBaseV2 {
@@ -16,7 +17,11 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 	uint16 requestConfirmations = 5;
 	uint32 numWords = 3;
 
-	uint256 public constant MINIMUM_VALUE_TO_PLAY = 0.01 ether;
+	//USDT Contract
+	address public usdtTokenAddress;
+	IERC20 public usdtToken;
+
+	uint256 public constant MINIMUM_VALUE_TO_PLAY = 1 * 10 ** 6;
 	uint8 public constant INVALID_NUMBER = 20;
 
 	mapping(uint256 => Round) public rounds;
@@ -85,7 +90,8 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 	constructor(
 		uint64 _subscriptionId,
 		address _vrfCoordinator,
-		bytes32 _keyHash
+		bytes32 _keyHash,
+		address _usdtTokenAddress
 	) payable VRFConsumerBaseV2(_vrfCoordinator) {
 		COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
 		keyHash = _keyHash;
@@ -131,6 +137,10 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 			Symbols.ETH,
 			Symbols.BTC
 		];
+
+		//Initialize USDT Token
+		usdtTokenAddress = _usdtTokenAddress;
+		usdtToken = IERC20(_usdtTokenAddress);
 	}
 
 	//1. CORE LOGIC
@@ -140,21 +150,25 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 	 * @param referringUserAddress user who refer this play
 	 */
 	function play(
-		address referringUserAddress
+		address referringUserAddress,
+		uint256 amountToPlay
 	) public payable returns (uint256) {
 		require(
 			!isClosed(),
 			"Cannot add money because contract could not pay if user wins"
 		);
-		require(msg.value > 0, "Amount should be greater than 0");
+		require(amountToPlay > 0, "Amount should be greater than 0");
 		require(
-			msg.value >= MINIMUM_VALUE_TO_PLAY,
+			amountToPlay >= MINIMUM_VALUE_TO_PLAY,
 			"Value should be greater than minimum value to play"
 		);
 		require(
-			getMaxValueToPlay() >= msg.value,
+			getMaxValueToPlay() >= amountToPlay,
 			"Cannot add money because contract could not pay if user wins"
 		);
+
+		// Transfer the specified amount of USDT from the player to the contract
+		usdtToken.transferFrom(msg.sender, address(this), amountToPlay);
 
 		User storage currentUser = infoPerUser[msg.sender];
 		if (currentUser.active == false) {
@@ -171,7 +185,10 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 			currentUser.referringUserAddress != address(0) &&
 			currentUser.referringUserAddress != msg.sender
 		) {
-			updateReferralEarnings(currentUser.referringUserAddress, msg.value);
+			updateReferralEarnings(
+				currentUser.referringUserAddress,
+				amountToPlay
+			);
 		}
 
 		uint256 requestId = COORDINATOR.requestRandomWords(
@@ -187,7 +204,7 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 			INVALID_NUMBER,
 			INVALID_NUMBER,
 			INVALID_NUMBER,
-			msg.value
+			amountToPlay
 		);
 
 		rounds[requestId] = currentRound;
@@ -256,7 +273,7 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 	 *@dev Get total money in contract
 	 */
 	function getMoneyInContract() public view returns (uint256) {
-		return address(this).balance;
+		return usdtToken.balanceOf(address(this));
 	}
 
 	/**
@@ -404,13 +421,16 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 		for (uint8 i = 0; i < teamMembers.length; i++) {
 			TeamMember memory teamMember = teamMembers[i];
 
-			uint256 amounToPay = (totalPendingMoney * teamMember.percentage) /
+			uint256 amountToPay = (totalPendingMoney * teamMember.percentage) /
 				100;
 
-			address payable devAddressPayable = payable(teamMember.devAddress);
-			devAddressPayable.transfer(amounToPay);
+			// Transfer USDT to the team member
+			require(
+				usdtToken.transfer(teamMember.devAddress, amountToPay),
+				"Failed to transfer USDT"
+			);
 
-			totalMoneyClaimedByDevs += amounToPay;
+			totalMoneyClaimedByDevs += amountToPay;
 		}
 	}
 
@@ -432,8 +452,11 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 
 		require(moneyToClaim > 0, "User has claimed all the earnings");
 
-		address payable userAdressPayable = payable(userAddress);
-		userAdressPayable.transfer(moneyToClaim);
+		// Transfer USDT to the user
+		require(
+			usdtToken.transfer(userAddress, moneyToClaim),
+			"Failed to transfer USDT"
+		);
 
 		//Update user and global stats
 		infoPerUser[userAddress].moneyClaimed += moneyToClaimForPlay;
@@ -492,4 +515,20 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 		require(isMember, "User is not part of the team members");
 		_;
 	}
+
+	/**
+	 * Allow users to deposit usdt tokens in contract
+	 * @param amount Number of tokens
+	 */
+	function depositUsdtTokens(address to, uint256 amount) external {
+		require(
+			usdtToken.transferFrom(msg.sender, to, amount),
+			"Transfer failed"
+		);
+	}
+
+	/*function withdrawTokens(address to, uint256 amount) external onlyOwner {
+		require(usdtToken.transfer(to, amount), "Transfer failed");
+		//emit TokensWithdrawn(to, amount);
+	}*/
 }

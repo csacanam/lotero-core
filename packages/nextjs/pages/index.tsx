@@ -43,7 +43,7 @@ const SlotMachine = (): JSX.Element => {
       <form id="playForm">
         {/* Eliminamos el campo de entrada del usuario referido */}
         <button className="btn btn-secondary btn-sm" type="button" onClick={play}>
-          Jugar
+          Play Lotero
         </button>
       </form>
 
