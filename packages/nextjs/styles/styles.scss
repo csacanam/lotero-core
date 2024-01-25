@@ -138,3 +138,178 @@ body {
 #slotMachineTitle {
   margin-top:40px;
 }
+
+// New styles for the columns
+.columns {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+
+  .column {
+    flex: 1;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-right: 10px;
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+
+      .balance,
+      .wins,
+      .referrals {
+        display: flex;
+        align-items: center;
+
+        span {
+          margin-right: 5px;
+        }
+      }
+
+      .pay-table-button,
+      .claim-button {
+        padding: 8px 16px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: #45a049;
+        }
+      }
+
+      .info-icon {
+        font-size: 18px;
+        cursor: pointer;
+      }
+    }
+  }
+}
+// New styles for the columns
+.columns {
+	display: flex;
+	justify-content: space-around;
+	margin-bottom: 20px;
+  
+	.column {
+	  flex: 1;
+	  padding: 10px;
+	  border-radius: 5px;
+	  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	  margin-right: 10px;
+  
+	  h2 {
+		font-size: 18px;
+		margin-bottom: 10px;
+	  }
+  
+	  .row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 10px;
+  
+		.balance,
+		.wins,
+		.referrals {
+		  display: flex;
+		  align-items: center;
+  
+		  span {
+			margin-right: 5px;
+		  }
+		}
+  
+		.pay-table-button,
+		.claim-button {
+		  padding: 8px 16px;
+		  background-color: #4caf50;
+		  color: white;
+		  border: none;
+		  border-radius: 5px;
+		  cursor: pointer;
+  
+		  &:hover {
+			background-color: #45a049;
+		  }
+		}
+  
+		.info-icon {
+		  font-size: 18px;
+		  cursor: pointer;
+		}
+	  }
+	}
+  }
+
+  // New styles for the columns
+.columns {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+
+  .column {
+    flex: 1;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-right: 10px;
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+
+      .balance,
+      .wins,
+      .referrals {
+        display: flex;
+        align-items: center;
+
+        span {
+          margin-right: 5px;
+        }
+
+		svg {
+			width: 30px;
+			height: 30px;
+		  }
+      }
+
+      .pay-table-button,
+      .claim-button {
+        padding: 8px 16px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: #45a049;
+        }
+      }
+
+      .info-icon {
+        font-size: 18px;
+        cursor: pointer;
+      }
+    }
+  }
+}
