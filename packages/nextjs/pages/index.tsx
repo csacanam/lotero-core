@@ -2,20 +2,19 @@ import { useEffect } from "react";
 
 const SlotMachine = (): JSX.Element => {
   useEffect(() => {
-    // Ejecutar la lógica del juego cuando se carga la página
+    // Execute the game logic when the page loads
     play();
   }, []);
 
   const play = (): void => {
-    //const referringUserAddress = ''; // Obtener la dirección del usuario referido aquí
+    // Logic to interact with the smart contract and get game results
 
-    // Lógica para interactuar con el contrato inteligente y obtener resultados del juego
-
-    // Supongamos que obtuviste los resultados de los slots como números aleatorios (0-9)
+    // Assume you got slot results as random numbers (0-9)
     const result1 = getRandomNumber();
     const result2 = getRandomNumber();
     const result3 = getRandomNumber();
 
+    // Display results in the slots
     const slot1 = document.getElementById("slot1");
     const slot2 = document.getElementById("slot2");
     const slot3 = document.getElementById("slot3");
@@ -26,7 +25,7 @@ const SlotMachine = (): JSX.Element => {
       slot3.innerText = result3.toString();
     }
 
-    // Más lógica para interactuar con el contrato y mostrar el resultado
+    // More logic to interact with the contract and show the result
   };
 
   const getRandomNumber = (): number => {
@@ -41,19 +40,24 @@ const SlotMachine = (): JSX.Element => {
       </h1>
 
       <form id="playForm">
-        {/* Eliminamos el campo de entrada del usuario referido */}
+        {/* Removed the input field for referring user */}
         <button className="btn btn-secondary btn-sm" type="button" onClick={play}>
           Play Lotero
         </button>
       </form>
 
       <div className="slots">
-        <div className="slot" id="slot1"></div>
-        <div className="slot" id="slot2"></div>
-        <div className="slot" id="slot3"></div>
+        {/* Integrated the slot reels from provided HTML */}
+        <div className="reel"></div>
+        <div className="reel"></div>
+        <div className="reel"></div>
       </div>
 
-      <div id="result">{/* Aquí se mostrará el resultado del juego */}</div>
+      {/* Integrated the debug element from the provided HTML */}
+      <div id="debug" className="debug"></div>
+
+      {/* Integrated the result display element */}
+      <div id="result">{/* Here will be the game result */}</div>
     </div>
   );
 };
