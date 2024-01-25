@@ -637,7 +637,7 @@ describe("Decentralized Slot Machine", async function () {
       });
     });
 
-    /*     //3. PLAYER CLAIMINGS
+    //3. PLAYER CLAIMINGS
     describe("3. PLAYER CLAIMINGS", function () {
       describe("First Player Claim Earnings", function () {
         it("Claim earnings", async () => {
@@ -646,19 +646,19 @@ describe("Decentralized Slot Machine", async function () {
 
         it("Check first player information", async () => {
           const user1 = await myContract.infoPerUser(account1.address);
-          expect(user1.moneyAdded).to.be.equal(ethers.utils.parseEther("0.2"));
+          expect(user1.moneyAdded).to.be.equal(ethers.utils.parseUnits("2", 6));
           expect(user1.moneyEarned).to.be.equal(ethers.utils.parseEther("0"));
           expect(user1.moneyClaimed).to.be.equal(ethers.utils.parseEther("0"));
           expect(user1.active).to.be.equal(true);
           expect(user1.referringUserAddress).to.be.equal(ethers.constants.AddressZero);
-          expect(user1.earnedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
-          expect(user1.claimedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(user1.earnedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
+          expect(user1.claimedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
         });
 
         it("Check second player information", async () => {
           const user2 = await myContract.infoPerUser(account2.address);
-          expect(user2.moneyAdded).to.be.equal(ethers.utils.parseEther("0.2"));
-          expect(user2.moneyEarned).to.be.equal(ethers.utils.parseEther("0.5"));
+          expect(user2.moneyAdded).to.be.equal(ethers.utils.parseUnits("2", 6));
+          expect(user2.moneyEarned).to.be.equal(ethers.utils.parseUnits("5", 6));
           expect(user2.moneyClaimed).to.be.equal(ethers.utils.parseEther("0"));
           expect(user2.active).to.be.equal(true);
           expect(user2.referringUserAddress).to.be.equal(account1.address);
@@ -671,31 +671,31 @@ describe("Decentralized Slot Machine", async function () {
           expect(Number(users)).to.be.equal(Number(2));
 
           const totalMoneyAdded = await myContract.totalMoneyAdded();
-          expect(totalMoneyAdded).to.be.equal(ethers.utils.parseEther("0.4"));
+          expect(totalMoneyAdded).to.be.equal(ethers.utils.parseUnits("4", 6));
 
           const totalMoneyEarnedByPlayers = await myContract.totalMoneyEarnedByPlayers();
-          expect(totalMoneyEarnedByPlayers).to.be.equal(ethers.utils.parseEther("0.5"));
+          expect(totalMoneyEarnedByPlayers).to.be.equal(ethers.utils.parseUnits("5", 6));
 
           const totalMoneyClaimedByPlayers = await myContract.totalMoneyClaimedByPlayers();
           expect(totalMoneyClaimedByPlayers).to.be.equal(ethers.utils.parseEther("0"));
 
           const totalMoneyEarnedByDevs = await myContract.totalMoneyEarnedByDevs();
-          expect(totalMoneyEarnedByDevs).to.be.equal(ethers.utils.parseEther("0.02"));
+          expect(totalMoneyEarnedByDevs).to.be.equal(ethers.utils.parseUnits("0.2", 6));
 
           const totalMoneyClaimedByDevs = await myContract.totalMoneyClaimedByDevs();
           expect(totalMoneyClaimedByDevs).to.be.equal(ethers.utils.parseEther("0"));
 
           const totalMoneyEarnedByReferrals = await myContract.totalMoneyEarnedByReferrals();
-          expect(totalMoneyEarnedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(totalMoneyEarnedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
 
           const totalMoneyClaimedByReferrals = await myContract.totalMoneyClaimedByReferrals();
-          expect(totalMoneyClaimedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(totalMoneyClaimedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
 
           const moneyInContract = await myContract.getMoneyInContract();
-          expect(moneyInContract).to.be.equal(ethers.utils.parseEther("7.398"));
+          expect(moneyInContract).to.be.equal(ethers.utils.parseUnits("53.98", 6));
 
           const currentDebt = await myContract.getCurrentDebt();
-          expect(currentDebt).to.be.equal(ethers.utils.parseEther("0.52"));
+          expect(currentDebt).to.be.equal(ethers.utils.parseUnits("5.2", 6));
         });
       });
 
@@ -706,20 +706,20 @@ describe("Decentralized Slot Machine", async function () {
 
         it("Check first player information", async () => {
           const user1 = await myContract.infoPerUser(account1.address);
-          expect(user1.moneyAdded).to.be.equal(ethers.utils.parseEther("0.2"));
+          expect(user1.moneyAdded).to.be.equal(ethers.utils.parseUnits("2", 6));
           expect(user1.moneyEarned).to.be.equal(ethers.utils.parseEther("0"));
           expect(user1.moneyClaimed).to.be.equal(ethers.utils.parseEther("0"));
           expect(user1.active).to.be.equal(true);
           expect(user1.referringUserAddress).to.be.equal(ethers.constants.AddressZero);
-          expect(user1.earnedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
-          expect(user1.claimedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(user1.earnedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
+          expect(user1.claimedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
         });
 
         it("Check second player information", async () => {
           const user2 = await myContract.infoPerUser(account2.address);
-          expect(user2.moneyAdded).to.be.equal(ethers.utils.parseEther("0.2"));
-          expect(user2.moneyEarned).to.be.equal(ethers.utils.parseEther("0.5"));
-          expect(user2.moneyClaimed).to.be.equal(ethers.utils.parseEther("0.5"));
+          expect(user2.moneyAdded).to.be.equal(ethers.utils.parseUnits("2", 6));
+          expect(user2.moneyEarned).to.be.equal(ethers.utils.parseUnits("5", 6));
+          expect(user2.moneyClaimed).to.be.equal(ethers.utils.parseUnits("5", 6));
           expect(user2.active).to.be.equal(true);
           expect(user2.referringUserAddress).to.be.equal(account1.address);
           expect(user2.earnedByReferrals).to.be.equal(ethers.utils.parseEther("0"));
@@ -731,31 +731,31 @@ describe("Decentralized Slot Machine", async function () {
           expect(Number(users)).to.be.equal(Number(2));
 
           const totalMoneyAdded = await myContract.totalMoneyAdded();
-          expect(totalMoneyAdded).to.be.equal(ethers.utils.parseEther("0.4"));
+          expect(totalMoneyAdded).to.be.equal(ethers.utils.parseUnits("4", 6));
 
           const totalMoneyEarnedByPlayers = await myContract.totalMoneyEarnedByPlayers();
-          expect(totalMoneyEarnedByPlayers).to.be.equal(ethers.utils.parseEther("0.5"));
+          expect(totalMoneyEarnedByPlayers).to.be.equal(ethers.utils.parseUnits("5", 6));
 
           const totalMoneyClaimedByPlayers = await myContract.totalMoneyClaimedByPlayers();
-          expect(totalMoneyClaimedByPlayers).to.be.equal(ethers.utils.parseEther("0.5"));
+          expect(totalMoneyClaimedByPlayers).to.be.equal(ethers.utils.parseUnits("5", 6));
 
           const totalMoneyEarnedByDevs = await myContract.totalMoneyEarnedByDevs();
-          expect(totalMoneyEarnedByDevs).to.be.equal(ethers.utils.parseEther("0.02"));
+          expect(totalMoneyEarnedByDevs).to.be.equal(ethers.utils.parseUnits("0.2", 6));
 
           const totalMoneyClaimedByDevs = await myContract.totalMoneyClaimedByDevs();
           expect(totalMoneyClaimedByDevs).to.be.equal(ethers.utils.parseEther("0"));
 
           const totalMoneyEarnedByReferrals = await myContract.totalMoneyEarnedByReferrals();
-          expect(totalMoneyEarnedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(totalMoneyEarnedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
 
           const totalMoneyClaimedByReferrals = await myContract.totalMoneyClaimedByReferrals();
-          expect(totalMoneyClaimedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(totalMoneyClaimedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
 
           const moneyInContract = await myContract.getMoneyInContract();
-          expect(moneyInContract).to.be.equal(ethers.utils.parseEther("6.898"));
+          expect(moneyInContract).to.be.equal(ethers.utils.parseUnits("48.98", 6));
 
           const currentDebt = await myContract.getCurrentDebt();
-          expect(currentDebt).to.be.equal(ethers.utils.parseEther("0.02"));
+          expect(currentDebt).to.be.equal(ethers.utils.parseUnits("0.2", 6));
         });
       });
 
@@ -768,20 +768,20 @@ describe("Decentralized Slot Machine", async function () {
 
         it("Check first player information", async () => {
           const user1 = await myContract.infoPerUser(account1.address);
-          expect(user1.moneyAdded).to.be.equal(ethers.utils.parseEther("0.2"));
+          expect(user1.moneyAdded).to.be.equal(ethers.utils.parseUnits("2", 6));
           expect(user1.moneyEarned).to.be.equal(ethers.utils.parseEther("0"));
           expect(user1.moneyClaimed).to.be.equal(ethers.utils.parseEther("0"));
           expect(user1.active).to.be.equal(true);
           expect(user1.referringUserAddress).to.be.equal(ethers.constants.AddressZero);
-          expect(user1.earnedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
-          expect(user1.claimedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(user1.earnedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
+          expect(user1.claimedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
         });
 
         it("Check second player information", async () => {
           const user2 = await myContract.infoPerUser(account2.address);
-          expect(user2.moneyAdded).to.be.equal(ethers.utils.parseEther("0.2"));
-          expect(user2.moneyEarned).to.be.equal(ethers.utils.parseEther("0.5"));
-          expect(user2.moneyClaimed).to.be.equal(ethers.utils.parseEther("0.5"));
+          expect(user2.moneyAdded).to.be.equal(ethers.utils.parseUnits("2", 6));
+          expect(user2.moneyEarned).to.be.equal(ethers.utils.parseUnits("5", 6));
+          expect(user2.moneyClaimed).to.be.equal(ethers.utils.parseUnits("5", 6));
           expect(user2.active).to.be.equal(true);
           expect(user2.referringUserAddress).to.be.equal(account1.address);
           expect(user2.earnedByReferrals).to.be.equal(ethers.utils.parseEther("0"));
@@ -793,31 +793,31 @@ describe("Decentralized Slot Machine", async function () {
           expect(Number(users)).to.be.equal(Number(2));
 
           const totalMoneyAdded = await myContract.totalMoneyAdded();
-          expect(totalMoneyAdded).to.be.equal(ethers.utils.parseEther("0.4"));
+          expect(totalMoneyAdded).to.be.equal(ethers.utils.parseUnits("4", 6));
 
           const totalMoneyEarnedByPlayers = await myContract.totalMoneyEarnedByPlayers();
-          expect(totalMoneyEarnedByPlayers).to.be.equal(ethers.utils.parseEther("0.5"));
+          expect(totalMoneyEarnedByPlayers).to.be.equal(ethers.utils.parseUnits("5", 6));
 
           const totalMoneyClaimedByPlayers = await myContract.totalMoneyClaimedByPlayers();
-          expect(totalMoneyClaimedByPlayers).to.be.equal(ethers.utils.parseEther("0.5"));
+          expect(totalMoneyClaimedByPlayers).to.be.equal(ethers.utils.parseUnits("5", 6));
 
           const totalMoneyEarnedByDevs = await myContract.totalMoneyEarnedByDevs();
-          expect(totalMoneyEarnedByDevs).to.be.equal(ethers.utils.parseEther("0.02"));
+          expect(totalMoneyEarnedByDevs).to.be.equal(ethers.utils.parseUnits("0.2", 6));
 
           const totalMoneyClaimedByDevs = await myContract.totalMoneyClaimedByDevs();
           expect(totalMoneyClaimedByDevs).to.be.equal(ethers.utils.parseEther("0"));
 
           const totalMoneyEarnedByReferrals = await myContract.totalMoneyEarnedByReferrals();
-          expect(totalMoneyEarnedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(totalMoneyEarnedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
 
           const totalMoneyClaimedByReferrals = await myContract.totalMoneyClaimedByReferrals();
-          expect(totalMoneyClaimedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(totalMoneyClaimedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
 
           const moneyInContract = await myContract.getMoneyInContract();
-          expect(moneyInContract).to.be.equal(ethers.utils.parseEther("6.898"));
+          expect(moneyInContract).to.be.equal(ethers.utils.parseUnits("48.98", 6));
 
           const currentDebt = await myContract.getCurrentDebt();
-          expect(currentDebt).to.be.equal(ethers.utils.parseEther("0.02"));
+          expect(currentDebt).to.be.equal(ethers.utils.parseUnits("0.2", 6));
         });
       });
 
@@ -830,20 +830,20 @@ describe("Decentralized Slot Machine", async function () {
 
         it("Check first player information", async () => {
           const user1 = await myContract.infoPerUser(account1.address);
-          expect(user1.moneyAdded).to.be.equal(ethers.utils.parseEther("0.2"));
+          expect(user1.moneyAdded).to.be.equal(ethers.utils.parseUnits("2", 6));
           expect(user1.moneyEarned).to.be.equal(ethers.utils.parseEther("0"));
           expect(user1.moneyClaimed).to.be.equal(ethers.utils.parseEther("0"));
           expect(user1.active).to.be.equal(true);
           expect(user1.referringUserAddress).to.be.equal(ethers.constants.AddressZero);
-          expect(user1.earnedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
-          expect(user1.claimedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(user1.earnedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
+          expect(user1.claimedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
         });
 
         it("Check second player information", async () => {
           const user2 = await myContract.infoPerUser(account2.address);
-          expect(user2.moneyAdded).to.be.equal(ethers.utils.parseEther("0.2"));
-          expect(user2.moneyEarned).to.be.equal(ethers.utils.parseEther("0.5"));
-          expect(user2.moneyClaimed).to.be.equal(ethers.utils.parseEther("0.5"));
+          expect(user2.moneyAdded).to.be.equal(ethers.utils.parseUnits("2", 6));
+          expect(user2.moneyEarned).to.be.equal(ethers.utils.parseUnits("5", 6));
+          expect(user2.moneyClaimed).to.be.equal(ethers.utils.parseUnits("5", 6));
           expect(user2.active).to.be.equal(true);
           expect(user2.referringUserAddress).to.be.equal(account1.address);
           expect(user2.earnedByReferrals).to.be.equal(ethers.utils.parseEther("0"));
@@ -855,31 +855,31 @@ describe("Decentralized Slot Machine", async function () {
           expect(Number(users)).to.be.equal(Number(2));
 
           const totalMoneyAdded = await myContract.totalMoneyAdded();
-          expect(totalMoneyAdded).to.be.equal(ethers.utils.parseEther("0.4"));
+          expect(totalMoneyAdded).to.be.equal(ethers.utils.parseUnits("4", 6));
 
           const totalMoneyEarnedByPlayers = await myContract.totalMoneyEarnedByPlayers();
-          expect(totalMoneyEarnedByPlayers).to.be.equal(ethers.utils.parseEther("0.5"));
+          expect(totalMoneyEarnedByPlayers).to.be.equal(ethers.utils.parseUnits("5", 6));
 
           const totalMoneyClaimedByPlayers = await myContract.totalMoneyClaimedByPlayers();
-          expect(totalMoneyClaimedByPlayers).to.be.equal(ethers.utils.parseEther("0.5"));
+          expect(totalMoneyClaimedByPlayers).to.be.equal(ethers.utils.parseUnits("5", 6));
 
           const totalMoneyEarnedByDevs = await myContract.totalMoneyEarnedByDevs();
-          expect(totalMoneyEarnedByDevs).to.be.equal(ethers.utils.parseEther("0.02"));
+          expect(totalMoneyEarnedByDevs).to.be.equal(ethers.utils.parseUnits("0.2", 6));
 
           const totalMoneyClaimedByDevs = await myContract.totalMoneyClaimedByDevs();
           expect(totalMoneyClaimedByDevs).to.be.equal(ethers.utils.parseEther("0"));
 
           const totalMoneyEarnedByReferrals = await myContract.totalMoneyEarnedByReferrals();
-          expect(totalMoneyEarnedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(totalMoneyEarnedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
 
           const totalMoneyClaimedByReferrals = await myContract.totalMoneyClaimedByReferrals();
-          expect(totalMoneyClaimedByReferrals).to.be.equal(ethers.utils.parseEther("0.002"));
+          expect(totalMoneyClaimedByReferrals).to.be.equal(ethers.utils.parseUnits("0.02", 6));
 
           const moneyInContract = await myContract.getMoneyInContract();
-          expect(moneyInContract).to.be.equal(ethers.utils.parseEther("6.898"));
+          expect(moneyInContract).to.be.equal(ethers.utils.parseUnits("48.98", 6));
 
           const currentDebt = await myContract.getCurrentDebt();
-          expect(currentDebt).to.be.equal(ethers.utils.parseEther("0.02"));
+          expect(currentDebt).to.be.equal(ethers.utils.parseUnits("0.2", 6));
         });
       });
     });
@@ -955,10 +955,10 @@ describe("Decentralized Slot Machine", async function () {
         await myContract.claimDevEarnings();
 
         const totalMoneyClaimedByDevs = await myContract.totalMoneyClaimedByDevs();
-        expect(totalMoneyClaimedByDevs).to.be.equal(ethers.utils.parseEther("0.02"));
+        expect(totalMoneyClaimedByDevs).to.be.equal(ethers.utils.parseUnits("0.2", 6));
 
         const moneyInContract = await myContract.getMoneyInContract();
-        expect(moneyInContract).to.be.equal(ethers.utils.parseEther("6.878"));
+        expect(moneyInContract).to.be.equal(ethers.utils.parseUnits("48.78", 6));
 
         const currentDebt = await myContract.getCurrentDebt();
         expect(currentDebt).to.be.equal(ethers.utils.parseEther("0"));
@@ -972,10 +972,10 @@ describe("Decentralized Slot Machine", async function () {
         );
 
         const totalMoneyClaimedByDevs = await myContract.totalMoneyClaimedByDevs();
-        expect(totalMoneyClaimedByDevs).to.be.equal(ethers.utils.parseEther("0.02"));
+        expect(totalMoneyClaimedByDevs).to.be.equal(ethers.utils.parseUnits("0.2", 6));
 
         const moneyInContract = await myContract.getMoneyInContract();
-        expect(moneyInContract).to.be.equal(ethers.utils.parseEther("6.878"));
+        expect(moneyInContract).to.be.equal(ethers.utils.parseUnits("48.78", 6));
 
         const currentDebt = await myContract.getCurrentDebt();
         expect(currentDebt).to.be.equal(ethers.utils.parseEther("0"));
@@ -991,6 +991,6 @@ describe("Decentralized Slot Machine", async function () {
       it("User a claims dev earnings should be reverted", async () => {
         await expect(myContract.claimDevEarnings()).to.be.revertedWith("There are not team members in the list");
       });
-    }); */
+    });
   });
 });
