@@ -313,3 +313,52 @@ body {
     }
   }
 }
+
+.container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	height: 100vh;
+	position: relative;
+  
+	.play-form {
+	  position: absolute;
+	  top: 58%;
+	  right: 0px;
+	  transform: translateY(-50%);
+	  display: flex;
+	  align-items: center;
+
+
+	}
+
+	.action-button {
+		display: flex;
+		padding: 10px 15px;
+		color: white;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.2rem; // Adjust the font 
+		text-align: center;
+		text-decoration: none;
+		font-size: 16px;
+		cursor: pointer;
+		border: none;
+		border-radius: 50%;
+		margin-left: 5px; /* Adjust the margin as needed */
+		width: 100px; // Set the width and height for a circular shape
+		height: 100px;
+		// Additional casino-style button styles
+		background: linear-gradient(to bottom, #4caf50 5%, #27ae60 100%);
+		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#2ecc71', endColorstr='#27ae60',GradientType=0);
+		border: 1px solid #1e6a5a;
+		
+	}
+
+	// Apply the shared style to other buttons
+	.spin-button {
+		@extend .action-button;
+	}
+
+}
+  

@@ -76,7 +76,7 @@ const SlotMachine = (): JSX.Element => {
         {/* Second Column */}
         <div className="column">
           <div className="row">
-            <h2>Unclaimed Rewards</h2>
+            <h2>Rewards</h2>
             <button className="claim-button">Claim</button>
           </div>
           <div className="row">
@@ -138,11 +138,15 @@ const SlotMachine = (): JSX.Element => {
         <div className="reel"></div>
       </div>
 
-      {/* Integrated the debug element from the provided HTML */}
-      <div id="debug" className="debug"></div>
-
       {/* Integrated the result display element */}
       <div id="result">{/* Here will be the game result */}</div>
+
+      <div className="play-form">
+        {/* Spin button */}
+        <button className="btn btn-secondary btn-sm action-button spin-button" type="button" onClick={play}>
+          Play
+        </button>
+      </div>
     </div>
   );
 };
