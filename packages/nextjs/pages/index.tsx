@@ -44,20 +44,20 @@ const SlotMachine = (): JSX.Element => {
         <button className="btn btn-secondary btn-sm" type="button" onClick={play}>
           Play Lotero
         </button>
+
+        <div className="slots">
+          {/* Integrated the slot reels from provided HTML */}
+          <div className="reel"></div>
+          <div className="reel"></div>
+          <div className="reel"></div>
+        </div>
+
+        {/* Integrated the debug element from the provided HTML */}
+        <div id="debug" className="debug"></div>
+
+        {/* Integrated the result display element */}
+        <div id="result">{/* Here will be the game result */}</div>
       </form>
-
-      <div className="slots">
-        {/* Integrated the slot reels from provided HTML */}
-        <div className="reel"></div>
-        <div className="reel"></div>
-        <div className="reel"></div>
-      </div>
-
-      {/* Integrated the debug element from the provided HTML */}
-      <div id="debug" className="debug"></div>
-
-      {/* Integrated the result display element */}
-      <div id="result">{/* Here will be the game result */}</div>
     </div>
   );
 };
