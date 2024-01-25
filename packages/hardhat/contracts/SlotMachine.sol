@@ -13,7 +13,7 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 	VRFCoordinatorV2Interface COORDINATOR;
 	uint64 subscriptionId;
 	bytes32 keyHash;
-	uint32 callbackGasLimit = 100000;
+	uint32 callbackGasLimit = 300000;
 	uint16 requestConfirmations = 5;
 	uint32 numWords = 3;
 
@@ -25,6 +25,7 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 	uint8 public constant INVALID_NUMBER = 20;
 
 	mapping(uint256 => Round) public rounds;
+	Round[] public roundsList;
 
 	struct User {
 		uint256 moneyAdded; //money added to contract
@@ -47,6 +48,8 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 		uint8 number2;
 		uint8 number3;
 		uint256 value;
+		bool hasWon;
+		uint256 prize;
 	}
 
 	enum Symbols {
@@ -204,7 +207,9 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 			INVALID_NUMBER,
 			INVALID_NUMBER,
 			INVALID_NUMBER,
-			amountToPlay
+			amountToPlay,
+			false,
+			0
 		);
 
 		rounds[requestId] = currentRound;
@@ -257,7 +262,13 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 			console.log("All symbols are equal");
 			currentUser.moneyEarned += prize[uint8(symbol1)] * round.value;
 			totalMoneyEarnedByPlayers += prize[uint8(symbol1)] * round.value;
+
+			//Update round
+			round.hasWon = true;
+			round.prize = prize[uint8(symbol1)] * round.value;
 		}
+
+		roundsList.push(round);
 
 		//Update user info
 		currentUser.moneyAdded += round.value;
@@ -486,6 +497,13 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 	 */
 	function getRoundInfo(uint256 roundId) public view returns (Round memory) {
 		return rounds[roundId];
+	}
+
+	/**
+	 *@dev Get total rounds list
+	 */
+	function getRoundsList() public view returns (Round[] memory) {
+		return roundsList;
 	}
 
 	//3. MODIFIERS AND OTHERS
