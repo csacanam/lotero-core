@@ -323,9 +323,9 @@ body {
   
 	.play-form {
 	  position: absolute;
-	  top: 58%;
-	  right: 0px;
-	  transform: translateY(-50%);
+    bottom: 100px; // Ajusta la posición vertical según sea necesario, puedes cambiar el valor
+    right: 50%; // Centra horizontalmente
+    transform: translateX(50%); // Centra horizontalmente
 	  display: flex;
 	  align-items: center;
 
@@ -358,6 +358,18 @@ body {
 	// Apply the shared style to other buttons
 	.spin-button {
 		@extend .action-button;
+      // Nuevos estilos para el botón de giro
+  background: linear-gradient(to bottom, #4caf50 5%, #27ae60 100%); // Mantén tus colores originales
+  border: 1px solid #1e6a5a;
+  border-radius: 50%; // Ajusta el radio para que sea un círculo
+  width: 100px; // Ajusta el ancho según sea necesario
+  height: 100px; // Ajusta la altura según sea necesario
+  margin-left: 0; // Ajusta el margen izquierdo para centrar el botón
+  position: relative; // Añade esta línea para permitir ajustes de posición
+
+  &:hover {
+    background: #45a049; // Mantén el color de fondo original al hacer hover
+  }
 	}
 
 }
