@@ -1,10 +1,24 @@
 import { useEffect } from "react";
+import { formatUnits } from "viem";
+import { useAccount } from "wagmi";
+import { useScaffoldContractRead } from "~~/hooks/scaffold-eth";
 
 const SlotMachine = (): JSX.Element => {
   useEffect(() => {
     // Execute the game logic when the page loads
     play();
   }, []);
+
+  //Get user balance of
+  const { address: connectedAddress } = useAccount();
+
+  const { data: totalCounter } = useScaffoldContractRead({
+    contractName: "MockUSDT",
+    functionName: "balanceOf",
+    args: [connectedAddress],
+  });
+
+  console.log("Balance: ", totalCounter);
 
   const play = (): void => {
     // Logic to interact with the smart contract and get game results
@@ -65,7 +79,7 @@ const SlotMachine = (): JSX.Element => {
                   ></path>
                 </svg>
               </span>
-              <span>100</span>
+              <span>{formatUnits(totalCounter || 0n, 6)?.toString()}</span>
             </div>
           </div>
           <div className="row">

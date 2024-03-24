@@ -51,7 +51,7 @@ describe("Decentralized Slot Machine", async function () {
       const amountToTransfer = ethers.utils.parseUnits("50", 6);
       const amountToTransfer2 = ethers.utils.parseUnits("10", 6);
 
-      // Transfer 30 MockUSDT from account 1 to My Contract
+      // Transfer 50 MockUSDT from account 1 to My Contract
       const approveTx = await mockUSDT.connect(account1).approve(myContract.address, amountToTransfer);
       await approveTx.wait();
 
