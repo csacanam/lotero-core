@@ -4,8 +4,288 @@ const contracts = {
       chainId: "31337",
       name: "localhost",
       contracts: {
-        SlotMachine: {
+        MockUSDT: {
           address: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+          abi: [
+            {
+              inputs: [],
+              stateMutability: "nonpayable",
+              type: "constructor",
+            },
+            {
+              anonymous: false,
+              inputs: [
+                {
+                  indexed: true,
+                  internalType: "address",
+                  name: "owner",
+                  type: "address",
+                },
+                {
+                  indexed: true,
+                  internalType: "address",
+                  name: "spender",
+                  type: "address",
+                },
+                {
+                  indexed: false,
+                  internalType: "uint256",
+                  name: "value",
+                  type: "uint256",
+                },
+              ],
+              name: "Approval",
+              type: "event",
+            },
+            {
+              anonymous: false,
+              inputs: [
+                {
+                  indexed: true,
+                  internalType: "address",
+                  name: "from",
+                  type: "address",
+                },
+                {
+                  indexed: true,
+                  internalType: "address",
+                  name: "to",
+                  type: "address",
+                },
+                {
+                  indexed: false,
+                  internalType: "uint256",
+                  name: "value",
+                  type: "uint256",
+                },
+              ],
+              name: "Transfer",
+              type: "event",
+            },
+            {
+              inputs: [
+                {
+                  internalType: "address",
+                  name: "owner",
+                  type: "address",
+                },
+                {
+                  internalType: "address",
+                  name: "spender",
+                  type: "address",
+                },
+              ],
+              name: "allowance",
+              outputs: [
+                {
+                  internalType: "uint256",
+                  name: "",
+                  type: "uint256",
+                },
+              ],
+              stateMutability: "view",
+              type: "function",
+            },
+            {
+              inputs: [
+                {
+                  internalType: "address",
+                  name: "spender",
+                  type: "address",
+                },
+                {
+                  internalType: "uint256",
+                  name: "amount",
+                  type: "uint256",
+                },
+              ],
+              name: "approve",
+              outputs: [
+                {
+                  internalType: "bool",
+                  name: "",
+                  type: "bool",
+                },
+              ],
+              stateMutability: "nonpayable",
+              type: "function",
+            },
+            {
+              inputs: [
+                {
+                  internalType: "address",
+                  name: "account",
+                  type: "address",
+                },
+              ],
+              name: "balanceOf",
+              outputs: [
+                {
+                  internalType: "uint256",
+                  name: "",
+                  type: "uint256",
+                },
+              ],
+              stateMutability: "view",
+              type: "function",
+            },
+            {
+              inputs: [],
+              name: "decimals",
+              outputs: [
+                {
+                  internalType: "uint8",
+                  name: "",
+                  type: "uint8",
+                },
+              ],
+              stateMutability: "view",
+              type: "function",
+            },
+            {
+              inputs: [
+                {
+                  internalType: "address",
+                  name: "spender",
+                  type: "address",
+                },
+                {
+                  internalType: "uint256",
+                  name: "subtractedValue",
+                  type: "uint256",
+                },
+              ],
+              name: "decreaseAllowance",
+              outputs: [
+                {
+                  internalType: "bool",
+                  name: "",
+                  type: "bool",
+                },
+              ],
+              stateMutability: "nonpayable",
+              type: "function",
+            },
+            {
+              inputs: [
+                {
+                  internalType: "address",
+                  name: "spender",
+                  type: "address",
+                },
+                {
+                  internalType: "uint256",
+                  name: "addedValue",
+                  type: "uint256",
+                },
+              ],
+              name: "increaseAllowance",
+              outputs: [
+                {
+                  internalType: "bool",
+                  name: "",
+                  type: "bool",
+                },
+              ],
+              stateMutability: "nonpayable",
+              type: "function",
+            },
+            {
+              inputs: [],
+              name: "name",
+              outputs: [
+                {
+                  internalType: "string",
+                  name: "",
+                  type: "string",
+                },
+              ],
+              stateMutability: "view",
+              type: "function",
+            },
+            {
+              inputs: [],
+              name: "symbol",
+              outputs: [
+                {
+                  internalType: "string",
+                  name: "",
+                  type: "string",
+                },
+              ],
+              stateMutability: "view",
+              type: "function",
+            },
+            {
+              inputs: [],
+              name: "totalSupply",
+              outputs: [
+                {
+                  internalType: "uint256",
+                  name: "",
+                  type: "uint256",
+                },
+              ],
+              stateMutability: "view",
+              type: "function",
+            },
+            {
+              inputs: [
+                {
+                  internalType: "address",
+                  name: "to",
+                  type: "address",
+                },
+                {
+                  internalType: "uint256",
+                  name: "amount",
+                  type: "uint256",
+                },
+              ],
+              name: "transfer",
+              outputs: [
+                {
+                  internalType: "bool",
+                  name: "",
+                  type: "bool",
+                },
+              ],
+              stateMutability: "nonpayable",
+              type: "function",
+            },
+            {
+              inputs: [
+                {
+                  internalType: "address",
+                  name: "from",
+                  type: "address",
+                },
+                {
+                  internalType: "address",
+                  name: "to",
+                  type: "address",
+                },
+                {
+                  internalType: "uint256",
+                  name: "amount",
+                  type: "uint256",
+                },
+              ],
+              name: "transferFrom",
+              outputs: [
+                {
+                  internalType: "bool",
+                  name: "",
+                  type: "bool",
+                },
+              ],
+              stateMutability: "nonpayable",
+              type: "function",
+            },
+          ],
+        },
+        SlotMachine: {
+          address: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
           abi: [
             {
               inputs: [
@@ -23,6 +303,11 @@ const contracts = {
                   internalType: "bytes32",
                   name: "_keyHash",
                   type: "bytes32",
+                },
+                {
+                  internalType: "address",
+                  name: "_usdtTokenAddress",
+                  type: "address",
                 },
               ],
               stateMutability: "payable",
@@ -217,6 +502,24 @@ const contracts = {
               type: "function",
             },
             {
+              inputs: [
+                {
+                  internalType: "address",
+                  name: "to",
+                  type: "address",
+                },
+                {
+                  internalType: "uint256",
+                  name: "amount",
+                  type: "uint256",
+                },
+              ],
+              name: "depositUsdtTokens",
+              outputs: [],
+              stateMutability: "nonpayable",
+              type: "function",
+            },
+            {
               inputs: [],
               name: "getCurrentDebt",
               outputs: [
@@ -292,10 +595,70 @@ const contracts = {
                       name: "value",
                       type: "uint256",
                     },
+                    {
+                      internalType: "bool",
+                      name: "hasWon",
+                      type: "bool",
+                    },
+                    {
+                      internalType: "uint256",
+                      name: "prize",
+                      type: "uint256",
+                    },
                   ],
                   internalType: "struct SlotMachine.Round",
                   name: "",
                   type: "tuple",
+                },
+              ],
+              stateMutability: "view",
+              type: "function",
+            },
+            {
+              inputs: [],
+              name: "getRoundsList",
+              outputs: [
+                {
+                  components: [
+                    {
+                      internalType: "address",
+                      name: "userAddress",
+                      type: "address",
+                    },
+                    {
+                      internalType: "uint8",
+                      name: "number1",
+                      type: "uint8",
+                    },
+                    {
+                      internalType: "uint8",
+                      name: "number2",
+                      type: "uint8",
+                    },
+                    {
+                      internalType: "uint8",
+                      name: "number3",
+                      type: "uint8",
+                    },
+                    {
+                      internalType: "uint256",
+                      name: "value",
+                      type: "uint256",
+                    },
+                    {
+                      internalType: "bool",
+                      name: "hasWon",
+                      type: "bool",
+                    },
+                    {
+                      internalType: "uint256",
+                      name: "prize",
+                      type: "uint256",
+                    },
+                  ],
+                  internalType: "struct SlotMachine.Round[]",
+                  name: "",
+                  type: "tuple[]",
                 },
               ],
               stateMutability: "view",
@@ -420,6 +783,11 @@ const contracts = {
                   internalType: "address",
                   name: "referringUserAddress",
                   type: "address",
+                },
+                {
+                  internalType: "uint256",
+                  name: "amountToPlay",
+                  type: "uint256",
                 },
               ],
               name: "play",
@@ -582,6 +950,65 @@ const contracts = {
                   name: "value",
                   type: "uint256",
                 },
+                {
+                  internalType: "bool",
+                  name: "hasWon",
+                  type: "bool",
+                },
+                {
+                  internalType: "uint256",
+                  name: "prize",
+                  type: "uint256",
+                },
+              ],
+              stateMutability: "view",
+              type: "function",
+            },
+            {
+              inputs: [
+                {
+                  internalType: "uint256",
+                  name: "",
+                  type: "uint256",
+                },
+              ],
+              name: "roundsList",
+              outputs: [
+                {
+                  internalType: "address",
+                  name: "userAddress",
+                  type: "address",
+                },
+                {
+                  internalType: "uint8",
+                  name: "number1",
+                  type: "uint8",
+                },
+                {
+                  internalType: "uint8",
+                  name: "number2",
+                  type: "uint8",
+                },
+                {
+                  internalType: "uint8",
+                  name: "number3",
+                  type: "uint8",
+                },
+                {
+                  internalType: "uint256",
+                  name: "value",
+                  type: "uint256",
+                },
+                {
+                  internalType: "bool",
+                  name: "hasWon",
+                  type: "bool",
+                },
+                {
+                  internalType: "uint256",
+                  name: "prize",
+                  type: "uint256",
+                },
               ],
               stateMutability: "view",
               type: "function",
@@ -712,6 +1139,32 @@ const contracts = {
               name: "transferOwnership",
               outputs: [],
               stateMutability: "nonpayable",
+              type: "function",
+            },
+            {
+              inputs: [],
+              name: "usdtToken",
+              outputs: [
+                {
+                  internalType: "contract IERC20",
+                  name: "",
+                  type: "address",
+                },
+              ],
+              stateMutability: "view",
+              type: "function",
+            },
+            {
+              inputs: [],
+              name: "usdtTokenAddress",
+              outputs: [
+                {
+                  internalType: "address",
+                  name: "",
+                  type: "address",
+                },
+              ],
+              stateMutability: "view",
               type: "function",
             },
             {

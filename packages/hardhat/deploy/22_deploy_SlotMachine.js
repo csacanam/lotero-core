@@ -12,13 +12,17 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
   const keyHash = MUMBAI_KEY_HASH;
   const subscriptionId = LOCAL_SUBSCRIPTION_ID;
 
+  //Get VRFCoordinator Address
   const vrfCoordinatorContract = await ethers.getContract("VRFCoordinatorV2Mock", deployer);
-
   const vrfCoordinatorAddress = vrfCoordinatorContract.address;
+
+  //Get MockUSDT Address
+  const mockUSDTContract = await ethers.getContract("MockUSDT", deployer);
+  const mockUSDTAddress = mockUSDTContract.address;
 
   const myContract = await deploy("SlotMachine", {
     from: deployer,
-    args: [subscriptionId, vrfCoordinatorAddress, keyHash],
+    args: [subscriptionId, vrfCoordinatorAddress, keyHash, mockUSDTAddress],
     log: true,
     waitConfirmations: 1,
   });
