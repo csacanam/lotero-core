@@ -9,16 +9,47 @@ const SlotMachine = (): JSX.Element => {
     play();
   }, []);
 
-  //Get user balance of
+  //Gett address of current user
   const { address: connectedAddress } = useAccount();
 
-  const { data: totalCounter } = useScaffoldContractRead({
+  //Get user balance of token to play
+  const { data: tokenUserBalance } = useScaffoldContractRead({
     contractName: "MockUSDT",
     functionName: "balanceOf",
     args: [connectedAddress],
   });
 
-  console.log("Balance: ", totalCounter);
+  //Create userInfo object
+  const userInfo = {
+    moneyAdded: 0,
+    moneyEarned: 0,
+    moneyClaimed: 0,
+    active: false,
+    referringUserAddress: "0x0000000000000000000000000000000000000000",
+    earnedByReferrals: 0,
+    claimedByReferrals: 0,
+  };
+
+  //Get info from current user
+  const { data: userInfoTx } = useScaffoldContractRead({
+    contractName: "SlotMachine",
+    functionName: "infoPerUser",
+    args: [connectedAddress],
+  });
+
+  if (userInfoTx) {
+    const values = Object.values(userInfoTx);
+    userInfo.moneyAdded = values[0];
+    userInfo.moneyEarned = values[1];
+    userInfo.moneyClaimed = values[2];
+    userInfo.active = values[3];
+    userInfo.referringUserAddress = values[4];
+    userInfo.earnedByReferrals = values[5];
+    userInfo.claimedByReferrals = values[6];
+  }
+
+  console.log("Balance: ", tokenUserBalance);
+  console.log("Money to Claim: ", userInfo.moneyEarned - userInfo.moneyClaimed);
 
   const play = (): void => {
     // Logic to interact with the smart contract and get game results
@@ -79,7 +110,7 @@ const SlotMachine = (): JSX.Element => {
                   ></path>
                 </svg>
               </span>
-              <span>{formatUnits(totalCounter || 0n, 6)?.toString()}</span>
+              <span>{formatUnits(tokenUserBalance || 0n, 6)?.toString()}</span>
             </div>
           </div>
           <div className="row">
@@ -114,7 +145,7 @@ const SlotMachine = (): JSX.Element => {
                   ></path>
                 </svg>
               </span>
-              <span>4.02</span>
+              <span>{formatUnits(BigInt(userInfo.moneyEarned - userInfo.moneyClaimed), 6)?.toString()}</span>
             </div>
           </div>
           <div className="row">
@@ -138,7 +169,9 @@ const SlotMachine = (): JSX.Element => {
                   ></path>
                 </svg>
               </span>
-              <span>1.07</span>
+              <span>
+                {formatUnits(BigInt(userInfo.earnedByReferrals - userInfo.claimedByReferrals), 6)?.toString()}
+              </span>
               <span className="info-icon">ℹ️</span>
             </div>
           </div>
