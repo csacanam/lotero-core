@@ -1,15 +1,18 @@
 import { useEffect } from "react";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
-import { useScaffoldContractRead } from "~~/hooks/scaffold-eth";
+import { useScaffoldContractRead, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
 
 const SlotMachine = (): JSX.Element => {
   useEffect(() => {
     // Execute the game logic when the page loads
-    play();
+    //play();
   }, []);
 
-  //Gett address of current user
+  //Token Contract
+  const tokenIsApproved = false;
+
+  //Get address of current user
   const { address: connectedAddress } = useAccount();
 
   //Get user balance of token to play
@@ -48,11 +51,27 @@ const SlotMachine = (): JSX.Element => {
     userInfo.claimedByReferrals = values[6];
   }
 
-  console.log("Balance: ", tokenUserBalance);
-  console.log("Money to Claim: ", userInfo.moneyEarned - userInfo.moneyClaimed);
+  //console.log("Balance: ", tokenUserBalance);
+  //console.log("Money to Claim: ", userInfo.moneyEarned - userInfo.moneyClaimed)
 
-  const play = (): void => {
+  //Play function
+  const { writeAsync } = useScaffoldContractWrite({
+    contractName: "SlotMachine",
+    functionName: "play",
+    args: ["0x0000000000000000000000000000000000000000", BigInt(1000000)],
+    blockConfirmations: 1,
+    onBlockConfirmation: txnReceipt => {
+      console.log("Transaction blockHash", txnReceipt.blockHash);
+    },
+  });
+
+  const approveToken = (): void => {
+    console.log("Approve token");
+  };
+
+  /*const play = (): void => {
     // Logic to interact with the smart contract and get game results
+
 
     // Assume you got slot results as random numbers (0-9)
     const result1 = getRandomNumber();
@@ -71,11 +90,11 @@ const SlotMachine = (): JSX.Element => {
     }
 
     // More logic to interact with the contract and show the result
-  };
+  };*/
 
-  const getRandomNumber = (): number => {
+  /*const getRandomNumber = (): number => {
     return Math.floor(Math.random() * 10);
-  };
+  };*/
 
   return (
     <div className="container">
@@ -190,9 +209,23 @@ const SlotMachine = (): JSX.Element => {
 
       <div className="play-form">
         {/* Spin button */}
-        <button className="btn btn-secondary btn-sm action-button spin-button" type="button" onClick={play}>
-          Play
-        </button>
+        {tokenIsApproved ? (
+          <button
+            className="btn btn-secondary btn-sm action-button spin-button"
+            type="button"
+            onClick={() => writeAsync()}
+          >
+            Play
+          </button>
+        ) : (
+          <button
+            className="btn btn-secondary btn-sm action-button spin-button"
+            type="button"
+            onClick={() => approveToken()}
+          >
+            Approve
+          </button>
+        )}
       </div>
     </div>
   );
