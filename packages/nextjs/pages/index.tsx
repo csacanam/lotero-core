@@ -1,7 +1,13 @@
 import { useEffect } from "react";
+import { useRouter } from "next/router";
 import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
-import { useScaffoldContractRead, useScaffoldContractWrite } from "~~/hooks/scaffold-eth";
+import {
+  useDeployedContractInfo,
+  useScaffoldContract,
+  useScaffoldContractRead,
+  useScaffoldContractWrite,
+} from "~~/hooks/scaffold-eth";
 
 const SlotMachine = (): JSX.Element => {
   useEffect(() => {
@@ -9,8 +15,25 @@ const SlotMachine = (): JSX.Element => {
     //play();
   }, []);
 
-  //Token Contract
-  const tokenIsApproved = false;
+  //Get referral user address
+  let referralUserAddress = "0x0000000000000000000000000000000000000000";
+  const router = useRouter();
+  if (router.query.ref) {
+    referralUserAddress = router.query.ref.toString();
+  }
+  console.log("Referral User Address:", referralUserAddress);
+
+  //Get Slot Machine Contract
+  const { data: deployedContractData } = useDeployedContractInfo("SlotMachine");
+  console.log("Slot Machine Contract Adress 2:", deployedContractData?.address);
+
+  const { data: slotMachineContract } = useScaffoldContract({
+    contractName: "SlotMachine",
+  });
+  console.log("Slot Machine Contract Adress:", slotMachineContract?.address);
+
+  //Token Contract Approved
+  let tokenIsApproved = false;
 
   //Get address of current user
   const { address: connectedAddress } = useAccount();
@@ -42,59 +65,48 @@ const SlotMachine = (): JSX.Element => {
 
   if (userInfoTx) {
     const values = Object.values(userInfoTx);
-    userInfo.moneyAdded = values[0];
-    userInfo.moneyEarned = values[1];
-    userInfo.moneyClaimed = values[2];
-    userInfo.active = values[3];
-    userInfo.referringUserAddress = values[4];
-    userInfo.earnedByReferrals = values[5];
-    userInfo.claimedByReferrals = values[6];
+    userInfo.moneyAdded = values[0] as number;
+    userInfo.moneyEarned = values[1] as number;
+    userInfo.moneyClaimed = values[2] as number;
+    userInfo.active = values[3] as boolean;
+    userInfo.referringUserAddress = values[4] as string;
+    userInfo.earnedByReferrals = values[5] as number;
+    userInfo.claimedByReferrals = values[6] as number;
   }
 
-  //console.log("Balance: ", tokenUserBalance);
-  //console.log("Money to Claim: ", userInfo.moneyEarned - userInfo.moneyClaimed)
+  //Get allowance of token
+  const { data: allowanceToken } = useScaffoldContractRead({
+    contractName: "MockUSDT",
+    functionName: "allowance",
+    args: [connectedAddress, slotMachineContract?.address],
+  });
 
-  //Play function
-  const { writeAsync } = useScaffoldContractWrite({
-    contractName: "SlotMachine",
-    functionName: "play",
-    args: ["0x0000000000000000000000000000000000000000", BigInt(1000000)],
+  if (allowanceToken && allowanceToken >= BigInt(1000000)) {
+    tokenIsApproved = true;
+  }
+  console.log("Allowance: ", allowanceToken);
+
+  //Approve function
+  const { writeAsync: approveToken } = useScaffoldContractWrite({
+    contractName: "MockUSDT",
+    functionName: "approve",
+    args: [slotMachineContract?.address, BigInt(1000000)],
     blockConfirmations: 1,
     onBlockConfirmation: txnReceipt => {
       console.log("Transaction blockHash", txnReceipt.blockHash);
     },
   });
 
-  const approveToken = (): void => {
-    console.log("Approve token");
-  };
-
-  /*const play = (): void => {
-    // Logic to interact with the smart contract and get game results
-
-
-    // Assume you got slot results as random numbers (0-9)
-    const result1 = getRandomNumber();
-    const result2 = getRandomNumber();
-    const result3 = getRandomNumber();
-
-    // Display results in the slots
-    const slot1 = document.getElementById("slot1");
-    const slot2 = document.getElementById("slot2");
-    const slot3 = document.getElementById("slot3");
-
-    if (slot1 && slot2 && slot3) {
-      slot1.innerText = result1.toString();
-      slot2.innerText = result2.toString();
-      slot3.innerText = result3.toString();
-    }
-
-    // More logic to interact with the contract and show the result
-  };*/
-
-  /*const getRandomNumber = (): number => {
-    return Math.floor(Math.random() * 10);
-  };*/
+  //Play function
+  const { writeAsync: play } = useScaffoldContractWrite({
+    contractName: "SlotMachine",
+    functionName: "play",
+    args: [referralUserAddress, BigInt(1000000)],
+    blockConfirmations: 1,
+    onBlockConfirmation: txnReceipt => {
+      console.log("Transaction blockHash", txnReceipt.blockHash);
+    },
+  });
 
   return (
     <div className="container">
@@ -210,11 +222,7 @@ const SlotMachine = (): JSX.Element => {
       <div className="play-form">
         {/* Spin button */}
         {tokenIsApproved ? (
-          <button
-            className="btn btn-secondary btn-sm action-button spin-button"
-            type="button"
-            onClick={() => writeAsync()}
-          >
+          <button className="btn btn-secondary btn-sm action-button spin-button" type="button" onClick={() => play()}>
             Play
           </button>
         ) : (
