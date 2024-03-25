@@ -25,12 +25,12 @@ const SlotMachine = (): JSX.Element => {
 
   //Get Slot Machine Contract
   const { data: deployedContractData } = useDeployedContractInfo("SlotMachine");
-  console.log("Slot Machine Contract Adress 2:", deployedContractData?.address);
+  console.log("Slot Machine Contract Address 1:", deployedContractData?.address);
 
   const { data: slotMachineContract } = useScaffoldContract({
     contractName: "SlotMachine",
   });
-  console.log("Slot Machine Contract Adress:", slotMachineContract?.address);
+  console.log("Slot Machine Contract Address 2:", slotMachineContract?.address);
 
   //Token Contract Approved
   let tokenIsApproved = false;
