@@ -76,30 +76,6 @@ const SlotMachine = (): JSX.Element => {
     userInfo.claimedByReferrals = values[6] as any;
   }
 
-  const { data: totalDebt } = useContractRead({
-    address: slotMachineContract.address,
-    abi: slotMachineContract.abi,
-    functionName: "getCurrentDebt",
-  });
-
-  const { data: totalMoneyEarnedByPlayers } = useContractRead({
-    address: slotMachineContract.address,
-    abi: slotMachineContract.abi,
-    functionName: "totalMoneyEarnedByPlayers",
-  });
-
-  const { data: totalMoneyEarnedByDevs } = useContractRead({
-    address: slotMachineContract.address,
-    abi: slotMachineContract.abi,
-    functionName: "totalMoneyEarnedByDevs",
-  });
-
-  console.log("Total debt", totalDebt);
-  console.log("Total earned by players", totalMoneyEarnedByPlayers);
-  console.log("Total earned by devs", totalMoneyEarnedByDevs);
-  console.log("Money earned", userInfo.moneyEarned);
-  console.log("Money added", userInfo.moneyAdded);
-
   //Get allowance of token
   const { data: allowanceToken } = useContractRead({
     address: mockUSDTContract.address,
@@ -137,6 +113,7 @@ const SlotMachine = (): JSX.Element => {
     },
   });
 
+  //Listen for RequestedRandomness event
   useContractEvent({
     address: slotMachineContract.address,
     abi: slotMachineContract.abi,
@@ -147,6 +124,7 @@ const SlotMachine = (): JSX.Element => {
     },
   });
 
+  //Listen for ReceivedRandomness event
   useContractEvent({
     address: slotMachineContract.address,
     abi: slotMachineContract.abi,
