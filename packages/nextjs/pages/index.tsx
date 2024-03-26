@@ -255,8 +255,10 @@ const SlotMachine = (): JSX.Element => {
         {/* Second Column */}
         <div className="column">
           <div className="row">
-            <h2>Rewards</h2>
-            <button className="claim-button">Claim</button>
+            <h2 id="rewardsTitle">Rewards</h2>
+            <button id="claimButton" className="claim-button">
+              Claim
+            </button>
           </div>
           <div className="row">
             <div className="wins">
@@ -306,9 +308,30 @@ const SlotMachine = (): JSX.Element => {
               <span>
                 {formatUnits(BigInt(userInfo.earnedByReferrals - userInfo.claimedByReferrals), 6)?.toString()}
               </span>
-              <span className="info-icon">ℹ️</span>
+              <button
+                className="info-icon"
+                onClick={() => {
+                  const modal = document.getElementById("referral_modal") as HTMLDialogElement | null;
+                  modal?.showModal();
+                }}
+              >
+                ℹ️
+              </button>
             </div>
           </div>
+          {/* Referral Modal */}
+          <dialog id="referral_modal" className="modal">
+            <div className="modal-box">
+              <h3 className="font-bold text-lg">Share your referral link!</h3>
+              <p className="py-4">Press ESC key or click the button below to close</p>
+              <div className="modal-action">
+                <form method="dialog">
+                  {/* if there is a button in form, it will close the modal */}
+                  <button className="btn">Close</button>
+                </form>
+              </div>
+            </div>
+          </dialog>
         </div>
       </div>
 
