@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { useRouter } from "next/router";
 import { formatUnits } from "viem";
 import { useAccount, useContractEvent, useContractRead, useContractWrite } from "wagmi";
@@ -6,11 +6,6 @@ import externalContracts from "~~/contracts/externalContracts";
 import scaffoldConfig from "~~/scaffold.config";
 
 const SlotMachine = (): JSX.Element => {
-  useEffect(() => {
-    // Execute the game logic when the page loads
-    //play();
-  }, []);
-
   //General variables
   let requestedReqId: bigint;
   let receivedReqId: bigint;
@@ -203,6 +198,7 @@ const SlotMachine = (): JSX.Element => {
     console.log("rollInterval 2", rollIntervalRef);
   }
 
+  //Stop slot machine function
   function stopSlotMachine(stop1Index: number, stop2Index: number, stop3Index: number) {
     isRolling = false;
     clearInterval(rollIntervalRef.current);
