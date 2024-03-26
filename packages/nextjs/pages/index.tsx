@@ -38,14 +38,6 @@ const SlotMachine = (): JSX.Element => {
   //Get address of current user
   const { address: connectedAddress } = useAccount();
 
-  const [copied, setCopied] = useState(false);
-  const referralLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/ref=${connectedAddress}`;
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000); // Reset copied status after 3 seconds
-  };
-
   //Get user balance of token to play
   const { data: tokenUserBalance } = useContractRead({
     address: mockUSDTContract.address,
@@ -229,6 +221,35 @@ const SlotMachine = (): JSX.Element => {
 
     clearInterval(rollIntervalRef.current);
   }
+
+  //Logic to copy referral link
+  const [copied, setCopied] = useState(false);
+  const referralLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/ref=${connectedAddress}`;
+  const copyToClipboard = () => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(referralLink)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 3000);
+        })
+        .catch(error => {
+          console.error("Error copying to clipboard:", error);
+          // Fallback method
+          document.execCommand("copy");
+          setCopied(true);
+          setTimeout(() => setCopied(false), 3000);
+        });
+    } else {
+      // Fallback method
+      document.execCommand("copy");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+
+      // Display message for mobile users
+      alert("Please manually select and copy the referral link.");
+    }
+  };
 
   return (
     <div className="container">
