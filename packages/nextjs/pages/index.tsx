@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { formatUnits } from "viem";
 import { useAccount, useContractEvent, useContractRead, useContractWrite } from "wagmi";
@@ -37,6 +37,14 @@ const SlotMachine = (): JSX.Element => {
 
   //Get address of current user
   const { address: connectedAddress } = useAccount();
+
+  const [copied, setCopied] = useState(false);
+  const referralLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/ref=${connectedAddress}`;
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(referralLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000); // Reset copied status after 3 seconds
+  };
 
   //Get user balance of token to play
   const { data: tokenUserBalance } = useContractRead({
@@ -334,7 +342,16 @@ const SlotMachine = (): JSX.Element => {
           <dialog id="referral_modal" className="modal">
             <div className="modal-box">
               <h3 className="font-bold text-lg">Share your referral link!</h3>
-              <p className="py-4">Press ESC key or click the button below to close</p>
+              <p className="py-4">
+                Get a 1% commission on every bet from users playing for the first time with your referral link.
+              </p>
+              {/* Display referral link */}
+              <div className="referral-link">
+                <input type="text" value={referralLink} readOnly className="referral-input" />
+                <button onClick={copyToClipboard} className="copy-button">
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
               <div className="modal-action">
                 <form method="dialog">
                   {/* if there is a button in form, it will close the modal */}
