@@ -1,19 +1,28 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { formatUnits } from "viem";
-import { useAccount } from "wagmi";
-import {
-  useDeployedContractInfo,
-  useScaffoldContract,
-  useScaffoldContractRead,
-  useScaffoldContractWrite,
-} from "~~/hooks/scaffold-eth";
+import { useAccount, useContractEvent, useContractRead, useContractWrite } from "wagmi";
+import externalContracts from "~~/contracts/externalContracts";
+import scaffoldConfig from "~~/scaffold.config";
 
 const SlotMachine = (): JSX.Element => {
   useEffect(() => {
     // Execute the game logic when the page loads
     //play();
   }, []);
+
+  //General variables
+  let requestedReqId: bigint;
+  let receivedReqId: bigint;
+  const reel = ["DOGE", "DOGE", "DOGE", "DOGE", "DOGE", "BNB", "BNB", "ETH", "ETH", "BTC"];
+
+  //Slot Machine UI Variables
+  const num_icons = 9;
+  const icon_height = 79;
+  let isRolling = false;
+  const rollIntervalRef = useRef<NodeJS.Timer | undefined>(undefined);
+  console.log("isRolling 1", isRolling);
+  console.log("rollInterval 1", rollIntervalRef);
 
   //Get referral user address
   let referralUserAddress = "0x0000000000000000000000000000000000000000";
@@ -23,26 +32,23 @@ const SlotMachine = (): JSX.Element => {
   }
   console.log("Referral User Address:", referralUserAddress);
 
-  //Get Slot Machine Contract
-  const { data: deployedContractData } = useDeployedContractInfo("SlotMachine");
-  console.log("Slot Machine Contract Address 1:", deployedContractData?.address);
-
-  const { data: slotMachineContract } = useScaffoldContract({
-    contractName: "SlotMachine",
-  });
-  console.log("Slot Machine Contract Address 2:", slotMachineContract?.address);
-
   //Token Contract Approved
   let tokenIsApproved = false;
+
+  //Get deployedContracts
+  const chainId = scaffoldConfig.targetNetwork.id;
+  const mockUSDTContract = externalContracts[chainId][0].contracts.USDT;
+  const slotMachineContract = externalContracts[chainId][0].contracts.SlotMachine;
 
   //Get address of current user
   const { address: connectedAddress } = useAccount();
 
   //Get user balance of token to play
-  const { data: tokenUserBalance } = useScaffoldContractRead({
-    contractName: "MockUSDT",
+  const { data: tokenUserBalance } = useContractRead({
+    address: mockUSDTContract.address,
+    abi: mockUSDTContract.abi,
     functionName: "balanceOf",
-    args: [connectedAddress],
+    args: [connectedAddress as string],
   });
 
   //Create userInfo object
@@ -57,28 +63,54 @@ const SlotMachine = (): JSX.Element => {
   };
 
   //Get info from current user
-  const { data: userInfoTx } = useScaffoldContractRead({
-    contractName: "SlotMachine",
+  const { data: userInfoTx } = useContractRead({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
     functionName: "infoPerUser",
-    args: [connectedAddress],
+    args: [connectedAddress as string],
   });
 
   if (userInfoTx) {
     const values = Object.values(userInfoTx);
-    userInfo.moneyAdded = values[0] as number;
-    userInfo.moneyEarned = values[1] as number;
-    userInfo.moneyClaimed = values[2] as number;
+    userInfo.moneyAdded = values[0] as any;
+    userInfo.moneyEarned = values[1] as any;
+    userInfo.moneyClaimed = values[2] as any;
     userInfo.active = values[3] as boolean;
     userInfo.referringUserAddress = values[4] as string;
-    userInfo.earnedByReferrals = values[5] as number;
-    userInfo.claimedByReferrals = values[6] as number;
+    userInfo.earnedByReferrals = values[5] as any;
+    userInfo.claimedByReferrals = values[6] as any;
   }
 
+  const { data: totalDebt } = useContractRead({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
+    functionName: "getCurrentDebt",
+  });
+
+  const { data: totalMoneyEarnedByPlayers } = useContractRead({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
+    functionName: "totalMoneyEarnedByPlayers",
+  });
+
+  const { data: totalMoneyEarnedByDevs } = useContractRead({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
+    functionName: "totalMoneyEarnedByDevs",
+  });
+
+  console.log("Total debt", totalDebt);
+  console.log("Total earned by players", totalMoneyEarnedByPlayers);
+  console.log("Total earned by devs", totalMoneyEarnedByDevs);
+  console.log("Money earned", userInfo.moneyEarned);
+  console.log("Money added", userInfo.moneyAdded);
+
   //Get allowance of token
-  const { data: allowanceToken } = useScaffoldContractRead({
-    contractName: "MockUSDT",
+  const { data: allowanceToken } = useContractRead({
+    address: mockUSDTContract.address,
+    abi: mockUSDTContract.abi,
     functionName: "allowance",
-    args: [connectedAddress, slotMachineContract?.address],
+    args: [connectedAddress as string, slotMachineContract.address],
   });
 
   if (allowanceToken && allowanceToken >= BigInt(1000000)) {
@@ -87,26 +119,98 @@ const SlotMachine = (): JSX.Element => {
   console.log("Allowance: ", allowanceToken);
 
   //Approve function
-  const { writeAsync: approveToken } = useScaffoldContractWrite({
-    contractName: "MockUSDT",
+  const { writeAsync: approveToken } = useContractWrite({
+    address: mockUSDTContract.address,
+    abi: mockUSDTContract.abi,
     functionName: "approve",
-    args: [slotMachineContract?.address, BigInt(1000000)],
-    blockConfirmations: 1,
-    onBlockConfirmation: txnReceipt => {
-      console.log("Transaction blockHash", txnReceipt.blockHash);
-    },
+    args: [slotMachineContract.address, BigInt(1000000000)],
   });
 
   //Play function
-  const { writeAsync: play } = useScaffoldContractWrite({
-    contractName: "SlotMachine",
+  const { writeAsync: play } = useContractWrite({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
     functionName: "play",
     args: [referralUserAddress, BigInt(1000000)],
-    blockConfirmations: 1,
-    onBlockConfirmation: txnReceipt => {
-      console.log("Transaction blockHash", txnReceipt.blockHash);
+    onSettled(data, error) {
+      if (data) {
+        startSlotMachine();
+        console.log("Settled", { data, error });
+      } else {
+        console.log("Error playing", error);
+      }
     },
   });
+
+  useContractEvent({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
+    eventName: "RequestedRandomness",
+    listener(log) {
+      console.log("Request Id 1", log[0].args.reqId);
+      requestedReqId = log[0].args.reqId as bigint;
+    },
+  });
+
+  useContractEvent({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
+    eventName: "ReceivedRandomness",
+    listener(log) {
+      console.log("Request Id 2", log[0].args.reqId);
+      receivedReqId = log[0].args.reqId as bigint;
+      if (requestedReqId == receivedReqId) {
+        console.log("Received!!");
+
+        const firstResult: number = +formatUnits(BigInt(log[0].args.n1 as any), 0);
+        const secondResult: number = +formatUnits(BigInt(log[0].args.n2 as any), 0);
+        const thirdResult: number = +formatUnits(BigInt(log[0].args.n3 as any), 0);
+
+        stopSlotMachine(1, 1, 1);
+
+        console.log("Option 1", reel[firstResult]);
+        console.log("Option 2", reel[secondResult]);
+        console.log("Option 3", reel[thirdResult]);
+      }
+    },
+  });
+
+  // Roll function for a single reel
+  function rollReel(value: Element) {
+    const reel = value as HTMLElement; // Cast to HTMLElement
+    const initialPosition = Math.floor(Math.random() * num_icons) * icon_height * -1;
+    reel.style.backgroundPositionY = `${initialPosition}px`;
+  }
+
+  // Roll all reels at the same time
+  function rollAllReels() {
+    const reels = document.querySelectorAll(".slots .reel");
+    reels.forEach(rollReel);
+  }
+
+  // Start rolling the slots infinitely
+  function startSlotMachine() {
+    if (!isRolling) {
+      isRolling = true;
+      rollAllReels();
+      const interval = setInterval(rollAllReels, 50);
+      rollIntervalRef.current = interval; // Assign the interval to the ref
+    }
+    console.log("isRolling 2", isRolling);
+    console.log("rollInterval 2", rollIntervalRef);
+  }
+
+  function stopSlotMachine(stop1Index: number, stop2Index: number, stop3Index: number) {
+    isRolling = false;
+    clearInterval(rollIntervalRef.current);
+
+    const reels = document.querySelectorAll(".slots .reel");
+    (reels[0] as HTMLElement).style.backgroundPositionY = `${stop1Index * icon_height}px`;
+    (reels[1] as HTMLElement).style.backgroundPositionY = `${stop2Index * icon_height}px`;
+    (reels[2] as HTMLElement).style.backgroundPositionY = `${stop3Index * icon_height}px`;
+    console.log("isRolling 3", isRolling);
+    console.log("rollInterval 3", rollIntervalRef);
+  }
 
   return (
     <div className="container">

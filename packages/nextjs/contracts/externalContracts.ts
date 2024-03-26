@@ -930,7 +930,7 @@ const externalContracts = {
             },
           ],
         },
-        MockUSDT: {
+        USDT: {
           address: "0xAbbC9d455be3a34f533Be6dF606B740eebE512ee",
           abi: [
             {
