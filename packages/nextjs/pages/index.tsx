@@ -201,14 +201,25 @@ const SlotMachine = (): JSX.Element => {
   //Stop slot machine function
   function stopSlotMachine(stop1Index: number, stop2Index: number, stop3Index: number) {
     isRolling = false;
-    clearInterval(rollIntervalRef.current);
 
     const reels = document.querySelectorAll(".slots .reel");
-    (reels[0] as HTMLElement).style.backgroundPositionY = `${stop1Index * icon_height}px`;
-    (reels[1] as HTMLElement).style.backgroundPositionY = `${stop2Index * icon_height}px`;
-    (reels[2] as HTMLElement).style.backgroundPositionY = `${stop3Index * icon_height}px`;
-    console.log("isRolling 3", isRolling);
-    console.log("rollInterval 3", rollIntervalRef);
+
+    // Stop the first reel after a short delay
+    setTimeout(() => {
+      (reels[0] as HTMLElement).style.backgroundPositionY = `${stop1Index * icon_height}px`;
+
+      // Stop the second reel after a short delay
+      setTimeout(() => {
+        (reels[1] as HTMLElement).style.backgroundPositionY = `${stop2Index * icon_height}px`;
+
+        // Stop the third reel after a short delay
+        setTimeout(() => {
+          (reels[2] as HTMLElement).style.backgroundPositionY = `${stop3Index * icon_height}px`;
+        }, 300); // Adjust the delay here for the desired effect
+      }, 300); // Adjust the delay here for the desired effect
+    }, 300); // Adjust the delay here for the desired effect
+
+    clearInterval(rollIntervalRef.current);
   }
 
   return (
@@ -341,9 +352,6 @@ const SlotMachine = (): JSX.Element => {
         <div className="reel"></div>
         <div className="reel"></div>
       </div>
-
-      {/* Integrated the result display element */}
-      <div id="result">{/* Here will be the game result */}</div>
 
       <div className="play-form">
         {/* Spin button */}

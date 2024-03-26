@@ -30,6 +30,4 @@ p {
 .btn.btn-ghost {
   @apply shadow-none;
 }
-.mainUIComponent{
-  margin-top:150px;
-}
+
