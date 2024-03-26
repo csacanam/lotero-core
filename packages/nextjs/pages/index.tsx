@@ -17,7 +17,7 @@ const SlotMachine = (): JSX.Element => {
   const reel = ["DOGE", "DOGE", "DOGE", "DOGE", "DOGE", "BNB", "BNB", "ETH", "ETH", "BTC"];
 
   //Slot Machine UI Variables
-  const num_icons = 9;
+  const num_icons = 10;
   const icon_height = 79;
   let isRolling = false;
   const rollIntervalRef = useRef<NodeJS.Timer | undefined>(undefined);
@@ -166,11 +166,14 @@ const SlotMachine = (): JSX.Element => {
         const secondResult: number = +formatUnits(BigInt(log[0].args.n2 as any), 0);
         const thirdResult: number = +formatUnits(BigInt(log[0].args.n3 as any), 0);
 
-        stopSlotMachine(1, 1, 1);
+        stopSlotMachine(firstResult, secondResult, thirdResult);
 
         console.log("Option 1", reel[firstResult]);
+        console.log("Option 1", firstResult);
         console.log("Option 2", reel[secondResult]);
+        console.log("Option 2", secondResult);
         console.log("Option 3", reel[thirdResult]);
+        console.log("Option 3", thirdResult);
       }
     },
   });
