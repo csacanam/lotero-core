@@ -16,6 +16,8 @@ const SlotMachine = (): JSX.Element => {
   const icon_height = 79;
   let isRolling = false;
   const rollIntervalRef = useRef<NodeJS.Timer | undefined>(undefined);
+  // Audio element reference
+  const casinoSoundRef = useRef<HTMLAudioElement | null>(null);
   console.log("isRolling 1", isRolling);
   console.log("rollInterval 1", rollIntervalRef);
 
@@ -105,10 +107,24 @@ const SlotMachine = (): JSX.Element => {
     args: [referralUserAddress, BigInt(1000000)],
     onSettled(data, error) {
       if (data) {
+        startSoundCasino("/casino.mp3");
         startSlotMachine();
         console.log("Settled", { data, error });
       } else {
-        console.log("Error playing", error);
+        console.log("Error playing", error?.message);
+      }
+    },
+    onError(error) {
+      console.error("Error playing:", error);
+
+      if (error.message.includes("contract could not pay if user wins")) {
+        // Display friendly error message to the user
+        const modal = document.getElementById("error_modal") as HTMLDialogElement | null;
+        modal?.showModal();
+      } else {
+        // Handle other errors
+        // Optionally, display a generic error message
+        alert("An error occurred while playing. Please try again later.");
       }
     },
   });
@@ -132,6 +148,7 @@ const SlotMachine = (): JSX.Element => {
     listener(log) {
       console.log("Request Id 2", log[0].args.reqId);
       receivedReqId = log[0].args.reqId as bigint;
+      stopSoundCasino();
       if (requestedReqId == receivedReqId) {
         console.log("Received!!");
 
@@ -226,6 +243,23 @@ const SlotMachine = (): JSX.Element => {
 
       // Display message for mobile users
       alert("Please manually select and copy the referral link.");
+    }
+  };
+
+  // Function to start the casino sound
+  const startSoundCasino = (soundSrc: string): void => {
+    if (casinoSoundRef.current) {
+      casinoSoundRef.current.src = soundSrc;
+      casinoSoundRef.current.loop = true;
+      casinoSoundRef.current.play();
+    }
+  };
+
+  // Function to stop the casino sound
+  const stopSoundCasino = (): void => {
+    if (casinoSoundRef.current) {
+      casinoSoundRef.current.pause();
+      casinoSoundRef.current.currentTime = 0; // Reset the audio to the beginning
     }
   };
 
@@ -359,6 +393,25 @@ const SlotMachine = (): JSX.Element => {
               </div>
             </div>
           </dialog>
+          {/* Error Modal */}
+          <dialog id="error_modal" className="modal">
+            <div className="modal-box">
+              <h3 className="font-bold text-lg">Game closed!</h3>
+              <p className="py-4">
+                The contract does not have enough funds to pay out in case you win. Please contact support for
+                assistance.
+              </p>
+              <a className="copy-button" href="https://t.me/+4a-Lc7yiSJsxYjEx">
+                Support
+              </a>
+              <div className="modal-action">
+                <form method="dialog">
+                  {/* if there is a button in form, it will close the modal */}
+                  <button className="btn">Close</button>
+                </form>
+              </div>
+            </div>
+          </dialog>
         </div>
       </div>
 
@@ -368,6 +421,9 @@ const SlotMachine = (): JSX.Element => {
         <div className="reel"></div>
         <div className="reel"></div>
       </div>
+
+      {/* Audio element for casino sound */}
+      <audio ref={casinoSoundRef} />
 
       <div className="play-form">
         {/* Spin button */}
