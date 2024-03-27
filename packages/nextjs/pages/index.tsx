@@ -47,14 +47,7 @@ const SlotMachine = (): JSX.Element => {
 
   //Get address of current user
   const { address: connectedAddress } = useAccount();
-
-  //Get user balance of token to play
-  const { data: tokenUserBalance } = useContractRead({
-    address: mockUSDTContract.address,
-    abi: mockUSDTContract.abi,
-    functionName: "balanceOf",
-    args: [connectedAddress as string],
-  });
+  console.log("Current address", connectedAddress);
 
   //Create userInfo object
   const userInfo = {
@@ -66,6 +59,14 @@ const SlotMachine = (): JSX.Element => {
     earnedByReferrals: 0,
     claimedByReferrals: 0,
   };
+
+  //Get user balance of token to play
+  const { data: tokenUserBalance } = useContractRead({
+    address: mockUSDTContract.address,
+    abi: mockUSDTContract.abi,
+    functionName: "balanceOf",
+    args: [connectedAddress as string],
+  });
 
   //Get info from current user
   const { data: userInfoTx } = useContractRead({
@@ -97,7 +98,9 @@ const SlotMachine = (): JSX.Element => {
   if (allowanceToken && allowanceToken >= BigInt(1000000)) {
     tokenIsApproved = true;
   }
-  console.log("Allowance: ", allowanceToken);
+  if (connectedAddress) {
+    console.log("Allowance: ", allowanceToken);
+  }
 
   //Approve function
   const { writeAsync: approveToken } = useContractWrite({
@@ -177,6 +180,9 @@ const SlotMachine = (): JSX.Element => {
         const modal = document.getElementById("result_modal") as HTMLDialogElement | null;
         modal?.showModal();
 
+        if (reel[firstResult] == reel[secondResult] && reel[secondResult] == reel[thirdResult]) {
+          startWinSound();
+        }
         console.log("Option 1", reel[firstResult]);
         console.log("Option 1", firstResult);
         console.log("Option 2", reel[secondResult]);
@@ -288,20 +294,10 @@ const SlotMachine = (): JSX.Element => {
     clickSound.play();
   };
 
-  // Helper function to calculate winnings based on the result
-  const calculateWinnings = (result: string): number => {
-    switch (result) {
-      case "DOGE":
-        return 5;
-      case "BNB":
-        return 14;
-      case "ETH":
-        return 20;
-      case "BTC":
-        return 30;
-      default:
-        return 0;
-    }
+  // Function to play the sound when the user wins
+  const startWinSound = () => {
+    const clickSound = new Audio("/win.mp3"); // Assuming click.mp3 is the sound file
+    clickSound.play();
   };
 
   return (
@@ -337,7 +333,7 @@ const SlotMachine = (): JSX.Element => {
                   ></path>
                 </svg>
               </span>
-              <span>{formatUnits(tokenUserBalance || 0n, 6)?.toString()}</span>
+              {connectedAddress && <span>{formatUnits(tokenUserBalance || 0n, 6)?.toString()}</span>}
             </div>
           </div>
           <div className="row">
@@ -382,7 +378,9 @@ const SlotMachine = (): JSX.Element => {
                   ></path>
                 </svg>
               </span>
-              <span>{formatUnits(BigInt(userInfo.moneyEarned - userInfo.moneyClaimed), 6)?.toString()}</span>
+              {connectedAddress && (
+                <span>{formatUnits(BigInt(userInfo.moneyEarned - userInfo.moneyClaimed), 6)?.toString()}</span>
+              )}
             </div>
           </div>
           <div className="row">
@@ -406,9 +404,11 @@ const SlotMachine = (): JSX.Element => {
                   ></path>
                 </svg>
               </span>
-              <span>
-                {formatUnits(BigInt(userInfo.earnedByReferrals - userInfo.claimedByReferrals), 6)?.toString()}
-              </span>
+              {connectedAddress && (
+                <span>
+                  {formatUnits(BigInt(userInfo.earnedByReferrals - userInfo.claimedByReferrals), 6)?.toString()}
+                </span>
+              )}
               <button
                 className="info-icon"
                 onClick={() => {
@@ -427,7 +427,7 @@ const SlotMachine = (): JSX.Element => {
               {/* Title with result message */}
               <h3 className="font-bold text-lg resultmodal-title">
                 {reel[firstResult] === reel[secondResult] && reel[secondResult] === reel[thirdResult]
-                  ? `Congratulations! You Win ${calculateWinnings(reel[firstResult])} USDT!`
+                  ? "Congratulations! You Win!"
                   : "Better luck next time!"}
               </h3>
 
@@ -575,7 +575,7 @@ const SlotMachine = (): JSX.Element => {
             className={`btn btn-secondary btn-sm action-button spin-button ${isPlaying ? "disabled" : ""}`}
             type="button"
             onClick={() => {
-              if (!isPlaying) {
+              if (connectedAddress && !isPlaying) {
                 setIsPlaying(true); // Set isPlaying to true when play button is clicked
                 startClickSound();
                 play(); // Call the play function
@@ -588,7 +588,11 @@ const SlotMachine = (): JSX.Element => {
           <button
             className="btn btn-secondary btn-sm action-button spin-button"
             type="button"
-            onClick={() => approveToken()}
+            onClick={() => {
+              if (connectedAddress) {
+                approveToken();
+              }
+            }}
           >
             Approve
           </button>
