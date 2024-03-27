@@ -162,6 +162,18 @@ body {
   background-color: gray; /* Change this to the desired background color */
 }
 
+.pay-table th,
+.pay-table td {
+  padding: 5px; /* Espaciado interno de las celdas */
+  text-align: left; /* Alineación del texto a la izquierda */
+  margin-right: 10px; /* Margen a la derecha para separar las columnas */
+}
+
+.pay-table th:last-child,
+.pay-table td:last-child {
+  margin-right: 0; /* Eliminar el margen de la última columna para evitar un espacio adicional */
+}
+
 // New styles for the columns
 .columns {
   display: flex;

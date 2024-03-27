@@ -17,6 +17,7 @@ const SlotMachine = (): JSX.Element => {
   let isRolling = false;
   const rollIntervalRef = useRef<NodeJS.Timer | undefined>(undefined);
   const [isPlaying, setIsPlaying] = useState(false); // State to track if the user is playing
+
   // Audio element reference
   const casinoSoundRef = useRef<HTMLAudioElement | null>(null);
   console.log("isRolling 1", isRolling);
@@ -303,7 +304,15 @@ const SlotMachine = (): JSX.Element => {
             </div>
           </div>
           <div className="row">
-            <button className="pay-table-button">Pay table</button>
+            <button
+              className="pay-table-button"
+              onClick={() => {
+                const modal = document.getElementById("paytable_modal") as HTMLDialogElement | null;
+                modal?.showModal();
+              }}
+            >
+              Pay table
+            </button>
           </div>
         </div>
 
@@ -396,6 +405,61 @@ const SlotMachine = (): JSX.Element => {
               </div>
             </div>
           </dialog>
+
+          {/* Modal for pay table */}
+          <dialog id="paytable_modal" className="modal">
+            <div className="modal-box">
+              <h3 className="font-bold text-lg">Lotero - Pay Table</h3>
+              <div className="pay-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Coin</th>
+                      <th>Combination</th>
+                      <th>Payout (USDT)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <img src="/logos/doge.png" alt="DOGE" />
+                      </td>
+                      <td>DOGE x 3</td>
+                      <td>5</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <img src="/logos/bnb.png" alt="BNB" />
+                      </td>
+                      <td>BNB x 3</td>
+                      <td>14</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <img src="/logos/eth.png" alt="ETH" />
+                      </td>
+                      <td>ETH x 3</td>
+                      <td>20</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <img src="/logos/btc.png" alt="BTC" />
+                      </td>
+                      <td>BTC x 3</td>
+                      <td>30</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="modal-action">
+                <form method="dialog">
+                  {/* if there is a button in form, it will close the modal */}
+                  <button className="btn">Close</button>
+                </form>
+              </div>
+            </div>
+          </dialog>
+
           {/* Error Modal */}
           <dialog id="error_modal" className="modal">
             <div className="modal-box">
