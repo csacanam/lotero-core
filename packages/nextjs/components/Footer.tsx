@@ -60,6 +60,17 @@ export const Footer = () => {
             </div>
             <span>·</span>
             <div className="text-center">
+              <a
+                href="https://camilos-personal-organization.gitbook.io/lotero/"
+                target="_blank"
+                rel="noreferrer"
+                className="link"
+              >
+                Docs
+              </a>
+            </div>
+            <span>·</span>
+            <div className="text-center">
               <a href="https://t.me/+4a-Lc7yiSJsxYjEx" target="_blank" rel="noreferrer" className="link">
                 Support
               </a>

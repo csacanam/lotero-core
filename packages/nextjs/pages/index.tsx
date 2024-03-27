@@ -268,6 +268,12 @@ const SlotMachine = (): JSX.Element => {
     }
   };
 
+  // Function to play the sound when the user clicks a button
+  const startClickSound = () => {
+    const clickSound = new Audio("/click.mp3"); // Assuming click.mp3 is the sound file
+    clickSound.play();
+  };
+
   return (
     <div className="container">
       <h1 id="slotMachineTitle" className="text-center mb-8">
@@ -502,6 +508,7 @@ const SlotMachine = (): JSX.Element => {
             onClick={() => {
               if (!isPlaying) {
                 setIsPlaying(true); // Set isPlaying to true when play button is clicked
+                startClickSound();
                 play(); // Call the play function
               }
             }}
