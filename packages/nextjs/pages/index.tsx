@@ -12,6 +12,11 @@ const SlotMachine = (): JSX.Element => {
   let receivedReqId: bigint;
   const reel = ["DOGE", "DOGE", "DOGE", "DOGE", "DOGE", "BNB", "BNB", "ETH", "ETH", "BTC"];
 
+  //Results of game
+  const [firstResult, setFirstResult] = useState<number>(0);
+  const [secondResult, setSecondResult] = useState<number>(0);
+  const [thirdResult, setThirdResult] = useState<number>(0);
+
   //Slot Machine UI Variables
   const num_icons = 10;
   const icon_height = 79;
@@ -160,8 +165,17 @@ const SlotMachine = (): JSX.Element => {
         const secondResult: number = +formatUnits(BigInt(log[0].args.n2 as any), 0);
         const thirdResult: number = +formatUnits(BigInt(log[0].args.n3 as any), 0);
 
+        // Set the results of the game
+        setFirstResult(firstResult);
+        setSecondResult(secondResult);
+        setThirdResult(thirdResult);
+
         stopSlotMachine(firstResult, secondResult, thirdResult);
         setIsPlaying(false); // Reset isPlaying state when randomness is received
+
+        //Open result modal
+        const modal = document.getElementById("result_modal") as HTMLDialogElement | null;
+        modal?.showModal();
 
         console.log("Option 1", reel[firstResult]);
         console.log("Option 1", firstResult);
@@ -272,6 +286,22 @@ const SlotMachine = (): JSX.Element => {
   const startClickSound = () => {
     const clickSound = new Audio("/click.mp3"); // Assuming click.mp3 is the sound file
     clickSound.play();
+  };
+
+  // Helper function to calculate winnings based on the result
+  const calculateWinnings = (result: string): number => {
+    switch (result) {
+      case "DOGE":
+        return 5;
+      case "BNB":
+        return 14;
+      case "ETH":
+        return 20;
+      case "BTC":
+        return 30;
+      default:
+        return 0;
+    }
   };
 
   return (
@@ -390,6 +420,45 @@ const SlotMachine = (): JSX.Element => {
               </button>
             </div>
           </div>
+
+          {/*Result Modal*/}
+          <dialog id="result_modal" className="modal">
+            <div className="modal-box">
+              {/* Title with result message */}
+              <h3 className="font-bold text-lg resultmodal-title">
+                {reel[firstResult] === reel[secondResult] && reel[secondResult] === reel[thirdResult]
+                  ? `Congratulations! You Win ${calculateWinnings(reel[firstResult])} USDT!`
+                  : "Better luck next time!"}
+              </h3>
+
+              {/* Content with symbols of each reel */}
+              <div className="modal-content">
+                {/* Container for images */}
+                <div className="reel-results-container">
+                  <div className="reel-result">
+                    {/* Symbol of the first reel */}
+                    <Image src={`/logos/${reel[firstResult]}.png`} alt={reel[firstResult]} width={79} height={79} />
+                  </div>
+                  <div className="reel-result">
+                    {/* Symbol of the second reel */}
+                    <Image src={`/logos/${reel[secondResult]}.png`} alt={reel[secondResult]} width={79} height={79} />
+                  </div>
+                  <div className="reel-result">
+                    {/* Symbol of the third reel */}
+                    <Image src={`/logos/${reel[thirdResult]}.png`} alt={reel[thirdResult]} width={79} height={79} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-action">
+                <form method="dialog">
+                  {/* if there is a button in form, it will close the modal */}
+                  <button className="btn">Close</button>
+                </form>
+              </div>
+            </div>
+          </dialog>
+
           {/* Referral Modal */}
           <dialog id="referral_modal" className="modal">
             <div className="modal-box">
