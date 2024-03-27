@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/router";
 import { formatUnits } from "viem";
 import { useAccount, useContractEvent, useContractRead, useContractWrite } from "wagmi";
@@ -422,28 +423,28 @@ const SlotMachine = (): JSX.Element => {
                   <tbody>
                     <tr>
                       <td>
-                        <img src="/logos/doge.png" alt="DOGE" />
+                        <Image src="/logos/doge.png" alt="DOGE" width={79} height={79} />
                       </td>
                       <td>DOGE x 3</td>
                       <td>5</td>
                     </tr>
                     <tr>
                       <td>
-                        <img src="/logos/bnb.png" alt="BNB" />
+                        <Image src="/logos/bnb.png" alt="BNB" width={79} height={79} />
                       </td>
                       <td>BNB x 3</td>
                       <td>14</td>
                     </tr>
                     <tr>
                       <td>
-                        <img src="/logos/eth.png" alt="ETH" />
+                        <Image src="/logos/eth.png" alt="ETH" width={79} height={79} />
                       </td>
                       <td>ETH x 3</td>
                       <td>20</td>
                     </tr>
                     <tr>
                       <td>
-                        <img src="/logos/btc.png" alt="BTC" />
+                        <Image src="/logos/btc.png" alt="BTC" width={79} height={79} />
                       </td>
                       <td>BTC x 3</td>
                       <td>30</td>
