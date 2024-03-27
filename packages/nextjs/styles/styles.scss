@@ -157,6 +157,11 @@ body {
   text-decoration: underline;
 }
 
+/* Add this CSS in your stylesheet */
+.spin-button.playing {
+  background-color: gray; /* Change this to the desired background color */
+}
+
 // New styles for the columns
 .columns {
   display: flex;

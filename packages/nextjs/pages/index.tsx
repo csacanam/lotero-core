@@ -16,6 +16,7 @@ const SlotMachine = (): JSX.Element => {
   const icon_height = 79;
   let isRolling = false;
   const rollIntervalRef = useRef<NodeJS.Timer | undefined>(undefined);
+  const [isPlaying, setIsPlaying] = useState(false); // State to track if the user is playing
   // Audio element reference
   const casinoSoundRef = useRef<HTMLAudioElement | null>(null);
   console.log("isRolling 1", isRolling);
@@ -116,6 +117,7 @@ const SlotMachine = (): JSX.Element => {
     },
     onError(error) {
       console.error("Error playing:", error);
+      setIsPlaying(false); // Reset isPlaying state when randomness is received
 
       if (error.message.includes("contract could not pay if user wins")) {
         // Display friendly error message to the user
@@ -157,6 +159,7 @@ const SlotMachine = (): JSX.Element => {
         const thirdResult: number = +formatUnits(BigInt(log[0].args.n3 as any), 0);
 
         stopSlotMachine(firstResult, secondResult, thirdResult);
+        setIsPlaying(false); // Reset isPlaying state when randomness is received
 
         console.log("Option 1", reel[firstResult]);
         console.log("Option 1", firstResult);
@@ -428,8 +431,17 @@ const SlotMachine = (): JSX.Element => {
       <div className="play-form">
         {/* Spin button */}
         {tokenIsApproved ? (
-          <button className="btn btn-secondary btn-sm action-button spin-button" type="button" onClick={() => play()}>
-            Play
+          <button
+            className={`btn btn-secondary btn-sm action-button spin-button ${isPlaying ? "disabled" : ""}`}
+            type="button"
+            onClick={() => {
+              if (!isPlaying) {
+                setIsPlaying(true); // Set isPlaying to true when play button is clicked
+                play(); // Call the play function
+              }
+            }}
+          >
+            {isPlaying ? "Playing..." : "Play"}
           </button>
         ) : (
           <button
