@@ -147,20 +147,73 @@ const SlotMachine = (): JSX.Element => {
     abi: slotMachineContract.abi,
     eventName: "RequestedRandomness",
     listener(log) {
-      console.log("Request Id 1", log[0].args.reqId);
-      requestedReqId = log[0].args.reqId as bigint;
+      let firstNumber;
+      let secondNumber;
+      let thirdNumber;
+
+      for (const entry of log) {
+
+        console.log("Entry ReqId: ", entry.eventName);
+        if(entry.eventName === "RequestedRandomness"){
+          console.log("Request Id 1:", entry.args.reqId);
+          console.log("Request Id 2:", receivedReqId);
+          requestedReqId = entry.args.reqId as bigint;
+        } else if(entry.eventName === "ReceivedRandomness"){
+            console.log("Request Id 1:", requestedReqId);
+            console.log("Request Id 2:", entry.args.reqId);
+            receivedReqId = entry.args.reqId as bigint;
+            firstNumber = entry.args.n1 as number;
+            secondNumber = entry.args.n2 as number;
+            thirdNumber = entry.args.n3 as number;
+        }
+        
+      }
+        
+
+        if(requestedReqId === receivedReqId){
+          stopSoundCasino();
+
+          console.log("Received!!");
+
+          const firstResult: number = +formatUnits(BigInt(firstNumber as any), 0);
+          const secondResult: number = +formatUnits(BigInt(secondNumber as any), 0);
+          const thirdResult: number = +formatUnits(BigInt(thirdNumber as any), 0);
+  
+          // Set the results of the game
+          setFirstResult(firstResult);
+          setSecondResult(secondResult);
+          setThirdResult(thirdResult);
+  
+          stopSlotMachine(firstResult, secondResult, thirdResult);
+          setIsPlaying(false); // Reset isPlaying state when randomness is received
+  
+          //Open result modal
+          const modal = document.getElementById("result_modal") as HTMLDialogElement | null;
+          modal?.showModal();
+  
+          if (reel[firstResult] == reel[secondResult] && reel[secondResult] == reel[thirdResult]) {
+            startWinSound();
+          }
+
+          console.log("Option 1", reel[firstResult]);
+          console.log("Option 1", firstResult);
+          console.log("Option 2", reel[secondResult]);
+          console.log("Option 2", secondResult);
+          console.log("Option 3", reel[thirdResult]);
+          console.log("Option 3", thirdResult);
+        }
+
     },
   });
 
   //Listen for ReceivedRandomness event
-  useContractEvent({
+  /*useContractEvent({
     address: slotMachineContract.address,
     abi: slotMachineContract.abi,
     eventName: "ReceivedRandomness",
     listener(log) {
-      console.log("Complete log", log);
-      console.log("Request Id 2", log[4].args.reqId);
-      receivedReqId = log[4].args.reqId as bigint;
+
+      receivedReqId = log[0].args.reqId as bigint;
       stopSoundCasino();
       if (requestedReqId == receivedReqId) {
         console.log("Received!!");
@@ -192,7 +245,7 @@ const SlotMachine = (): JSX.Element => {
         console.log("Option 3", thirdResult);
       }
     },
-  });
+  });*/
 
   // Roll function for a single reel
   function rollReel(value: Element) {
