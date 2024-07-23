@@ -7,7 +7,7 @@ import { getTargetNetwork } from "~~/utils/scaffold-eth";
 
 const publicClient = createPublicClient({
   chain: mainnet,
-  transport: http(`${mainnet.rpcUrls.alchemy.http[0]}/${scaffoldConfig.alchemyApiKey}`),
+  transport: http(`${mainnet.rpcUrls.default.http[0]}/${scaffoldConfig.alchemyApiKey}`),
 });
 
 const ABI = parseAbi([

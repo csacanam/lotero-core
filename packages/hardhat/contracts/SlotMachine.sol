@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity >=0.8.26 <0.9.0;
 
-import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
-import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "hardhat/console.sol";
 
-contract SlotMachine is Ownable, VRFConsumerBaseV2 {
+contract SlotMachine is VRFConsumerBaseV2Plus {
 	//VRF Chainlink
-	VRFCoordinatorV2Interface COORDINATOR;
-	uint64 subscriptionId;
+	uint256 subscriptionId;
 	bytes32 keyHash;
 	uint32 callbackGasLimit = 300000;
 	uint16 requestConfirmations = 5;
@@ -91,12 +89,11 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 	event NewSymbol(Symbols symbol);
 
 	constructor(
-		uint64 _subscriptionId,
+		uint256 _subscriptionId,
 		address _vrfCoordinator,
 		bytes32 _keyHash,
 		address _usdtTokenAddress
-	) payable VRFConsumerBaseV2(_vrfCoordinator) {
-		COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
+	) payable VRFConsumerBaseV2Plus(_vrfCoordinator) {
 		keyHash = _keyHash;
 		subscriptionId = _subscriptionId;
 
@@ -194,12 +191,17 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 			);
 		}
 
-		uint256 requestId = COORDINATOR.requestRandomWords(
-			keyHash,
-			subscriptionId,
-			requestConfirmations,
-			callbackGasLimit,
-			numWords
+		uint256 requestId = s_vrfCoordinator.requestRandomWords(
+			VRFV2PlusClient.RandomWordsRequest({
+				keyHash: keyHash,
+				subId: subscriptionId,
+				requestConfirmations: requestConfirmations,
+				callbackGasLimit: callbackGasLimit,
+				numWords: numWords,
+				extraArgs: VRFV2PlusClient._argsToBytes(
+					VRFV2PlusClient.ExtraArgsV1({ nativePayment: false })
+				)
+			})
 		);
 
 		Round memory currentRound = Round(
@@ -226,7 +228,7 @@ contract SlotMachine is Ownable, VRFConsumerBaseV2 {
 	 */
 	function fulfillRandomWords(
 		uint256 requestId,
-		uint256[] memory randomWords
+		uint256[] calldata randomWords
 	) internal override {
 		uint8 n1 = uint8(randomWords[0] % 10);
 		uint8 n2 = uint8(randomWords[1] % 10);
