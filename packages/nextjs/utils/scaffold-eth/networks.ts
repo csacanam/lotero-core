@@ -42,6 +42,9 @@ export const NETWORKS_EXTRA_DATA: Record<string, TChainAttributes> = {
   [chains.arbitrumGoerli.id]: {
     color: "#28a0f0",
   },
+  [chains.arbitrumSepolia.id]: {
+    color: "#28a0f0",
+  },
   [chains.arbitrum.id]: {
     color: "#28a0f0",
   },

@@ -1,10 +1,10 @@
 import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
 const externalContracts = {
-  11155111: [
+  421614: [
     {
-      chainId: "11155111",
-      name: "Polygon Amoy",
+      chainId: "421614",
+      name: "Arbitrum Sepolia",
       contracts: {
         SlotMachine: {
           address: "0x3fb19E6c77dd18e8ceC1662ec3bbd7D3a088B88a",
@@ -931,7 +931,7 @@ const externalContracts = {
           ],
         },
         USDT: {
-          address: "0xb71E540cfd717Ec720C2c0577cCEBc83F9ADA384",
+          address: "0x26E33626259cbb30c24a0b3aDA9613c87F0e859d",
           abi: [
             {
               inputs: [

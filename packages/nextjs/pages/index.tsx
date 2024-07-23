@@ -158,15 +158,16 @@ const SlotMachine = (): JSX.Element => {
     abi: slotMachineContract.abi,
     eventName: "ReceivedRandomness",
     listener(log) {
-      console.log("Request Id 2", log[0].args.reqId);
-      receivedReqId = log[0].args.reqId as bigint;
+      console.log("Complete log", log);
+      console.log("Request Id 2", log[4].args.reqId);
+      receivedReqId = log[4].args.reqId as bigint;
       stopSoundCasino();
       if (requestedReqId == receivedReqId) {
         console.log("Received!!");
 
-        const firstResult: number = +formatUnits(BigInt(log[0].args.n1 as any), 0);
-        const secondResult: number = +formatUnits(BigInt(log[0].args.n2 as any), 0);
-        const thirdResult: number = +formatUnits(BigInt(log[0].args.n3 as any), 0);
+        const firstResult: number = +formatUnits(BigInt(log[4].args.n1 as any), 0);
+        const secondResult: number = +formatUnits(BigInt(log[4].args.n2 as any), 0);
+        const thirdResult: number = +formatUnits(BigInt(log[4].args.n3 as any), 0);
 
         // Set the results of the game
         setFirstResult(firstResult);
