@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { formatUnits } from "viem";
@@ -61,19 +61,32 @@ const SlotMachine = (): JSX.Element => {
   };
 
   //Get user balance of token to play
-  const { data: tokenUserBalance } = useContractRead({
+  const { data: tokenUserBalance, refetch: refetchBalance } = useContractRead({
     address: mockUSDTContract.address,
     abi: mockUSDTContract.abi,
     functionName: "balanceOf",
     args: [connectedAddress as string],
   });
+  console.log("Current balance:", tokenUserBalance);
 
   //Get info from current user
-  const { data: userInfoTx } = useContractRead({
+  const { data: userInfoTx, refetch: refetchUserInfo } = useContractRead({
     address: slotMachineContract.address,
     abi: slotMachineContract.abi,
     functionName: "infoPerUser",
     args: [connectedAddress as string],
+    onSuccess(data) {
+      if (data) {
+        const values = Object.values(data);
+        userInfo.moneyAdded = values[0] as any;
+        userInfo.moneyEarned = values[1] as any;
+        userInfo.moneyClaimed = values[2] as any;
+        userInfo.active = values[3] as boolean;
+        userInfo.referringUserAddress = values[4] as string;
+        userInfo.earnedByReferrals = values[5] as any;
+        userInfo.claimedByReferrals = values[6] as any;
+      }
+    },
   });
 
   if (userInfoTx) {
@@ -121,6 +134,9 @@ const SlotMachine = (): JSX.Element => {
         startSoundCasino("/casino.mp3");
         startSlotMachine();
         console.log("Settled", { data, error });
+        setIsPlaying(false); // Cambia el estado para detener el juego
+        refetchBalance(); // Actualiza el balance
+        refetchUserInfo(); // Actualiza los "wins" y "referrals"
       } else {
         console.log("Error playing", error?.message);
       }
@@ -141,6 +157,28 @@ const SlotMachine = (): JSX.Element => {
     },
   });
 
+  /** 
+  useContractEvent({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
+    eventName: "PlayCompleted",
+    listener(log) {
+      console.log("Game completed, updating UI");
+      refetchBalance();
+      refetchUserInfo();
+    },
+  });
+  
+  useContractEvent({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
+    eventName: "Claimed",
+    listener(log) {
+      console.log("Claim completed, updating referrals and wins");
+      refetchUserInfo();
+    },
+  });*/
+
   //Listen for RequestedRandomness event
   useContractEvent({
     address: slotMachineContract.address,
@@ -152,57 +190,59 @@ const SlotMachine = (): JSX.Element => {
       let thirdNumber;
 
       for (const entry of log) {
-
         console.log("Entry ReqId: ", entry.eventName);
-        if(entry.eventName === "RequestedRandomness"){
+        if (entry.eventName === "RequestedRandomness") {
           console.log("Request Id 1:", entry.args.reqId);
           console.log("Request Id 2:", receivedReqId);
           requestedReqId = entry.args.reqId as bigint;
-        } else if(entry.eventName === "ReceivedRandomness"){
-            console.log("Request Id 1:", requestedReqId);
-            console.log("Request Id 2:", entry.args.reqId);
-            receivedReqId = entry.args.reqId as bigint;
-            firstNumber = entry.args.n1 as number;
-            secondNumber = entry.args.n2 as number;
-            thirdNumber = entry.args.n3 as number;
+        } else if (
+          entry.eventName === "ReceivedRandomness" &&
+          entry.args &&
+          "n1" in entry.args &&
+          "n2" in entry.args &&
+          "n3" in entry.args
+        ) {
+          console.log("Request Id 1:", requestedReqId);
+          console.log("Request Id 2:", entry.args.reqId);
+          receivedReqId = entry.args.reqId as bigint;
+          firstNumber = entry.args.n1 as number;
+          secondNumber = entry.args.n2 as number;
+          thirdNumber = entry.args.n3 as number;
         }
-        
       }
-        
 
-        if(requestedReqId === receivedReqId){
-          stopSoundCasino();
+      if (requestedReqId === receivedReqId) {
+        stopSoundCasino();
 
-          console.log("Received!!");
+        console.log("Received!!");
 
-          const firstResult: number = +formatUnits(BigInt(firstNumber as any), 0);
-          const secondResult: number = +formatUnits(BigInt(secondNumber as any), 0);
-          const thirdResult: number = +formatUnits(BigInt(thirdNumber as any), 0);
-  
-          // Set the results of the game
-          setFirstResult(firstResult);
-          setSecondResult(secondResult);
-          setThirdResult(thirdResult);
-  
-          stopSlotMachine(firstResult, secondResult, thirdResult);
-          setIsPlaying(false); // Reset isPlaying state when randomness is received
-  
-          //Open result modal
-          const modal = document.getElementById("result_modal") as HTMLDialogElement | null;
-          modal?.showModal();
-  
-          if (reel[firstResult] == reel[secondResult] && reel[secondResult] == reel[thirdResult]) {
-            startWinSound();
-          }
+        const firstResult: number = +formatUnits(BigInt(firstNumber as any), 0);
+        const secondResult: number = +formatUnits(BigInt(secondNumber as any), 0);
+        const thirdResult: number = +formatUnits(BigInt(thirdNumber as any), 0);
 
-          console.log("Option 1", reel[firstResult]);
-          console.log("Option 1", firstResult);
-          console.log("Option 2", reel[secondResult]);
-          console.log("Option 2", secondResult);
-          console.log("Option 3", reel[thirdResult]);
-          console.log("Option 3", thirdResult);
+        // Set the results of the game
+        setFirstResult(firstResult);
+        setSecondResult(secondResult);
+        setThirdResult(thirdResult);
+
+        stopSlotMachine(firstResult, secondResult, thirdResult);
+        setIsPlaying(false); // Reset isPlaying state when randomness is received
+
+        //Open result modal
+        const modal = document.getElementById("result_modal") as HTMLDialogElement | null;
+        modal?.showModal();
+
+        if (reel[firstResult] == reel[secondResult] && reel[secondResult] == reel[thirdResult]) {
+          startWinSound();
         }
 
+        console.log("Option 1", reel[firstResult]);
+        console.log("Option 1", firstResult);
+        console.log("Option 2", reel[secondResult]);
+        console.log("Option 2", secondResult);
+        console.log("Option 3", reel[thirdResult]);
+        console.log("Option 3", thirdResult);
+      }
     },
   });
 
@@ -353,6 +393,14 @@ const SlotMachine = (): JSX.Element => {
     const clickSound = new Audio("/win.mp3"); // Assuming click.mp3 is the sound file
     clickSound.play();
   };
+
+  useEffect(() => {
+    if (!isPlaying) {
+      // Actualiza el balance y la información del usuario cuando el juego termina
+      refetchBalance();
+      refetchUserInfo();
+    }
+  }, [isPlaying, refetchBalance, refetchUserInfo]);
 
   return (
     <div className="container">
