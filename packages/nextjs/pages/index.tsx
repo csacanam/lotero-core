@@ -37,9 +37,6 @@ const SlotMachine = (): JSX.Element => {
   }
   console.log("Referral User Address:", referralUserAddress);
 
-  //Token Contract Approved
-  let tokenIsApproved = false;
-
   //Get deployedContracts
   const chainId = scaffoldConfig.targetNetwork.id;
   const mockUSDTContract = externalContracts[chainId][0].contracts.USDT;
@@ -109,19 +106,11 @@ const SlotMachine = (): JSX.Element => {
   });
 
   if (allowanceToken && allowanceToken >= BigInt(1000000)) {
-    tokenIsApproved = true;
+    console.log("Token is approved");
   }
   if (connectedAddress) {
     console.log("Allowance: ", allowanceToken);
   }
-
-  //Approve function
-  const { writeAsync: approveToken } = useContractWrite({
-    address: mockUSDTContract.address,
-    abi: mockUSDTContract.abi,
-    functionName: "approve",
-    args: [slotMachineContract.address, BigInt(1000000000)],
-  });
 
   //Play function
   const { writeAsync: play } = useContractWrite({
@@ -290,7 +279,7 @@ const SlotMachine = (): JSX.Element => {
   // Roll function for a single reel
   function rollReel(value: Element) {
     const reel = value as HTMLElement; // Cast to HTMLElement
-    const initialPosition = Math.floor(Math.random() * num_icons) * icon_height * -1;
+    const initialPosition = Math.floor(Math.random() * num_icons) * icon_height * -1 - 40;
     reel.style.backgroundPositionY = `${initialPosition}px`;
   }
 
@@ -320,15 +309,15 @@ const SlotMachine = (): JSX.Element => {
 
     // Stop the first reel after a short delay
     setTimeout(() => {
-      (reels[0] as HTMLElement).style.backgroundPositionY = `${stop1Index * icon_height}px`;
+      (reels[0] as HTMLElement).style.backgroundPositionY = `${stop1Index * icon_height - 40}px`;
 
       // Stop the second reel after a short delay
       setTimeout(() => {
-        (reels[1] as HTMLElement).style.backgroundPositionY = `${stop2Index * icon_height}px`;
+        (reels[1] as HTMLElement).style.backgroundPositionY = `${stop2Index * icon_height - 40}px`;
 
         // Stop the third reel after a short delay
         setTimeout(() => {
-          (reels[2] as HTMLElement).style.backgroundPositionY = `${stop3Index * icon_height}px`;
+          (reels[2] as HTMLElement).style.backgroundPositionY = `${stop3Index * icon_height - 40}px`;
         }, 300); // Adjust the delay here for the desired effect
       }, 300); // Adjust the delay here for the desired effect
     }, 300); // Adjust the delay here for the desired effect
@@ -410,7 +399,7 @@ const SlotMachine = (): JSX.Element => {
       </h1>
 
       <div className="columns">
-        {/* First Column */}
+        {/* Balance Column */}
         <div className="column">
           <div className="row">
             <h2>Balance</h2>
@@ -445,19 +434,56 @@ const SlotMachine = (): JSX.Element => {
                 const modal = document.getElementById("paytable_modal") as HTMLDialogElement | null;
                 modal?.showModal();
               }}
+              style={{ width: "calc(100% - 30px)", marginLeft: "15px" }}
             >
               Pay table
             </button>
           </div>
         </div>
 
-        {/* Second Column */}
+        {/* Game Column */}
+        <div className="column">
+          <div className="slots">
+            {/* Integrated the slot reels from provided HTML */}
+            <div className="reel"></div>
+            <div className="reel"></div>
+            <div className="reel"></div>
+          </div>
+          <div className="play-form">
+            <button
+              className={`spin-button ${isPlaying ? "playing" : ""}`}
+              onClick={async () => {
+                if (connectedAddress && !isPlaying) {
+                  if (!tokenUserBalance || tokenUserBalance < BigInt(1000000)) {
+                    alert("You don't have enough USDT to play. Please add more funds.");
+                    return;
+                  }
+                  try {
+                    setIsPlaying(true);
+                    startClickSound();
+                    await play();
+                  } catch (error: any) {
+                    console.error("Error in play function:", error);
+                    setIsPlaying(false);
+                    if (error.message?.includes("internal error")) {
+                      alert("There was an internal error. Please try again in a few moments.");
+                    } else {
+                      alert("An error occurred while playing. Please try again later.");
+                    }
+                  }
+                }
+              }}
+              disabled={isPlaying || !connectedAddress || !tokenUserBalance || tokenUserBalance < BigInt(1000000)}
+            >
+              {isPlaying ? "PLAYING..." : "🎰 SPIN NOW"}
+            </button>
+          </div>
+        </div>
+
+        {/* Rewards Column */}
         <div className="column">
           <div className="row">
-            <h2 id="rewardsTitle">Rewards</h2>
-            <button id="claimButton" className="claim-button">
-              Claim
-            </button>
+            <h2>Rewards</h2>
           </div>
           <div className="row">
             <div className="wins">
@@ -486,6 +512,11 @@ const SlotMachine = (): JSX.Element => {
             </div>
           </div>
           <div className="row">
+            <button id="claimWinsButton" className="claim-button">
+              Claim Wins
+            </button>
+          </div>
+          <div className="row">
             <div className="referrals">
               <span>Referrals:</span>
               <span>
@@ -511,195 +542,166 @@ const SlotMachine = (): JSX.Element => {
                   {formatUnits(BigInt(userInfo.earnedByReferrals - userInfo.claimedByReferrals), 6)?.toString()}
                 </span>
               )}
-              <button
-                className="info-icon"
-                onClick={() => {
-                  const modal = document.getElementById("referral_modal") as HTMLDialogElement | null;
-                  modal?.showModal();
-                }}
-              >
-                ℹ️
-              </button>
             </div>
           </div>
-
-          {/*Result Modal*/}
-          <dialog id="result_modal" className="modal">
-            <div className="modal-box">
-              {/* Title with result message */}
-              <h3 className="font-bold text-lg resultmodal-title">
-                {reel[firstResult] === reel[secondResult] && reel[secondResult] === reel[thirdResult]
-                  ? "Congratulations! You Win!"
-                  : "Better luck next time!"}
-              </h3>
-
-              {/* Content with symbols of each reel */}
-              <div className="modal-content">
-                {/* Container for images */}
-                <div className="reel-results-container">
-                  <div className="reel-result">
-                    {/* Symbol of the first reel */}
-                    <Image src={`/logos/${reel[firstResult]}.png`} alt={reel[firstResult]} width={79} height={79} />
-                  </div>
-                  <div className="reel-result">
-                    {/* Symbol of the second reel */}
-                    <Image src={`/logos/${reel[secondResult]}.png`} alt={reel[secondResult]} width={79} height={79} />
-                  </div>
-                  <div className="reel-result">
-                    {/* Symbol of the third reel */}
-                    <Image src={`/logos/${reel[thirdResult]}.png`} alt={reel[thirdResult]} width={79} height={79} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-action">
-                <form method="dialog">
-                  {/* if there is a button in form, it will close the modal */}
-                  <button className="btn">Close</button>
-                </form>
-              </div>
-            </div>
-          </dialog>
-
-          {/* Referral Modal */}
-          <dialog id="referral_modal" className="modal">
-            <div className="modal-box">
-              <h3 className="font-bold text-lg">Share your referral link!</h3>
-              <p className="py-4">
-                Get a 1% commission on every bet from users playing for the first time with your referral link.
-              </p>
-              {/* Display referral link */}
-              <div className="referral-link">
-                <input type="text" value={referralLink} readOnly className="referral-input" />
-                <button onClick={copyToClipboard} className="copy-button">
-                  {copied ? "Copied!" : "Copy"}
-                </button>
-              </div>
-              <div className="modal-action">
-                <form method="dialog">
-                  {/* if there is a button in form, it will close the modal */}
-                  <button className="btn">Close</button>
-                </form>
-              </div>
-            </div>
-          </dialog>
-
-          {/* Modal for pay table */}
-          <dialog id="paytable_modal" className="modal">
-            <div className="modal-box">
-              <h3 className="font-bold text-lg">Lotero - Pay Table</h3>
-              <div className="pay-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Coin</th>
-                      <th>Combination</th>
-                      <th>Payout (USDT)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>
-                        <Image src="/logos/doge.png" alt="DOGE" width={79} height={79} />
-                      </td>
-                      <td>DOGE x 3</td>
-                      <td>5</td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <Image src="/logos/bnb.png" alt="BNB" width={79} height={79} />
-                      </td>
-                      <td>BNB x 3</td>
-                      <td>14</td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <Image src="/logos/eth.png" alt="ETH" width={79} height={79} />
-                      </td>
-                      <td>ETH x 3</td>
-                      <td>20</td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <Image src="/logos/btc.png" alt="BTC" width={79} height={79} />
-                      </td>
-                      <td>BTC x 3</td>
-                      <td>30</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div className="modal-action">
-                <form method="dialog">
-                  {/* if there is a button in form, it will close the modal */}
-                  <button className="btn">Close</button>
-                </form>
-              </div>
-            </div>
-          </dialog>
-
-          {/* Error Modal */}
-          <dialog id="error_modal" className="modal">
-            <div className="modal-box">
-              <h3 className="font-bold text-lg">Game closed!</h3>
-              <p className="py-4">
-                The contract does not have enough funds to pay out in case you win. Please contact support for
-                assistance.
-              </p>
-              <a className="copy-button" href="https://t.me/+4a-Lc7yiSJsxYjEx">
-                Support
-              </a>
-              <div className="modal-action">
-                <form method="dialog">
-                  {/* if there is a button in form, it will close the modal */}
-                  <button className="btn">Close</button>
-                </form>
-              </div>
-            </div>
-          </dialog>
+          <div className="row referral-text">
+            <p>Invite friends and earn rewards!</p>
+            <a
+              href="#"
+              onClick={e => {
+                e.preventDefault();
+                const modal = document.getElementById("referral_modal") as HTMLDialogElement | null;
+                modal?.showModal();
+              }}
+              className="vibrate"
+            >
+              🔗 Get your referral link
+            </a>
+          </div>
+          <div className="row">
+            <button
+              id="claimReferralsButton"
+              className="claim-button"
+              style={{ width: "calc(100% - 30px)", marginLeft: "15px" }}
+            >
+              Claim Referrals
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="slots">
-        {/* Integrated the slot reels from provided HTML */}
-        <div className="reel"></div>
-        <div className="reel"></div>
-        <div className="reel"></div>
-      </div>
+      {/* Result Modal */}
+      <dialog id="result_modal" className="modal">
+        <div className="modal-box">
+          {/* Title with result message */}
+          <h3 className="font-bold text-lg resultmodal-title">
+            {reel[firstResult] === reel[secondResult] && reel[secondResult] === reel[thirdResult]
+              ? "Congratulations! You Win!"
+              : "Better luck next time!"}
+          </h3>
+
+          {/* Content with symbols of each reel */}
+          <div className="modal-content">
+            {/* Container for images */}
+            <div className="reel-results-container">
+              <div className="reel-result">
+                {/* Symbol of the first reel */}
+                <Image src={`/logos/${reel[firstResult]}.png`} alt={reel[firstResult]} width={79} height={79} />
+              </div>
+              <div className="reel-result">
+                {/* Symbol of the second reel */}
+                <Image src={`/logos/${reel[secondResult]}.png`} alt={reel[secondResult]} width={79} height={79} />
+              </div>
+              <div className="reel-result">
+                {/* Symbol of the third reel */}
+                <Image src={`/logos/${reel[thirdResult]}.png`} alt={reel[thirdResult]} width={79} height={79} />
+              </div>
+            </div>
+          </div>
+
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn">Close</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+
+      {/* Referral Modal */}
+      <dialog id="referral_modal" className="modal">
+        <div className="modal-box">
+          <h3 className="font-bold text-lg">Share your referral link!</h3>
+          <p className="py-4">
+            Get a 1% commission on every bet from users playing for the first time with your referral link.
+          </p>
+          {/* Display referral link */}
+          <div className="referral-link">
+            <input type="text" value={referralLink} readOnly className="referral-input" />
+            <button onClick={copyToClipboard} className="copy-button">
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          </div>
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn">Close</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+
+      {/* Modal for pay table */}
+      <dialog id="paytable_modal" className="modal">
+        <div className="modal-box">
+          <h3 className="font-bold text-lg">Lotero - Pay Table</h3>
+          <div className="pay-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Coin</th>
+                  <th>Combination</th>
+                  <th>Payout (USDT)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <Image src="/logos/doge.png" alt="DOGE" width={79} height={79} />
+                  </td>
+                  <td>DOGE x 3</td>
+                  <td>5</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Image src="/logos/bnb.png" alt="BNB" width={79} height={79} />
+                  </td>
+                  <td>BNB x 3</td>
+                  <td>14</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Image src="/logos/eth.png" alt="ETH" width={79} height={79} />
+                  </td>
+                  <td>ETH x 3</td>
+                  <td>20</td>
+                </tr>
+                <tr>
+                  <td>
+                    <Image src="/logos/btc.png" alt="BTC" width={79} height={79} />
+                  </td>
+                  <td>BTC x 3</td>
+                  <td>30</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn">Close</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+
+      {/* Error Modal */}
+      <dialog id="error_modal" className="modal">
+        <div className="modal-box">
+          <h3 className="font-bold text-lg">Game closed!</h3>
+          <p className="py-4">
+            The contract does not have enough funds to pay out in case you win. Please contact support for assistance.
+          </p>
+          <a className="copy-button" href="https://t.me/+4a-Lc7yiSJsxYjEx">
+            Support
+          </a>
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn">Close</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
 
       {/* Audio element for casino sound */}
       <audio ref={casinoSoundRef} />
-
-      <div className="play-form">
-        {/* Spin button */}
-        {tokenIsApproved ? (
-          <button
-            className={`btn btn-secondary btn-sm action-button spin-button ${isPlaying ? "disabled" : ""}`}
-            type="button"
-            onClick={() => {
-              if (connectedAddress && !isPlaying) {
-                setIsPlaying(true); // Set isPlaying to true when play button is clicked
-                startClickSound();
-                play(); // Call the play function
-              }
-            }}
-          >
-            {isPlaying ? "Playing..." : "Play"}
-          </button>
-        ) : (
-          <button
-            className="btn btn-secondary btn-sm action-button spin-button"
-            type="button"
-            onClick={() => {
-              if (connectedAddress) {
-                approveToken();
-              }
-            }}
-          >
-            Approve
-          </button>
-        )}
-      </div>
     </div>
   );
 };

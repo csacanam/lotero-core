@@ -2,6 +2,12 @@ $icon_width: 79px;
 $icon_height: 79px;
 $num_icons: 9;
 
+// Variables for casino colors
+$casino-gold: #ffd700;
+$casino-gold-dark: #b8860b;
+$casino-black: #1a1a1a;
+$casino-dark: #2c2c2c;
+
 .debug {
   position: fixed;
   top: 4px;
@@ -14,74 +20,159 @@ $num_icons: 9;
   font-size: 1.6rem;
 }
 
-body {
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: 'Arial', sans-serif;
+  color: #ecf0f1;
+}
+
+#__next {
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(45deg, grey 0%, lightgray 100%);
+  flex-direction: column;
+  background: 
+    radial-gradient(circle at center, 
+      rgba(255, 215, 0, 0.1) 0%,
+      rgba(26, 26, 26, 0.8) 50%,
+      rgba(0, 0, 0, 0.95) 100%
+    ),
+    linear-gradient(135deg, 
+      $casino-black 0%, 
+      $casino-dark 50%,
+      #000000 100%
+    );
+  position: relative;
+  padding-bottom: 100px;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 20%, 
+        rgba(255, 215, 0, 0.15) 0%,
+        transparent 50%
+      ),
+      radial-gradient(circle at 80% 80%, 
+        rgba(255, 215, 0, 0.15) 0%,
+        transparent 50%
+      );
+    pointer-events: none;
+    animation: backgroundGlow 8s ease-in-out infinite alternate;
+    z-index: 0;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      repeating-linear-gradient(
+        45deg,
+        rgba(255, 215, 0, 0.03) 0px,
+        rgba(255, 215, 0, 0.03) 1px,
+        transparent 1px,
+        transparent 10px
+      );
+    pointer-events: none;
+    z-index: 0;
+  }
 }
 
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 40px 20px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  box-sizing: border-box;
+  min-height: calc(100vh - 100px);
 }
 
 .slots {
-  box-sizing: unset;
+  box-sizing: border-box;
   position: relative;
-  width: 3.5 * $icon_width;
+  width: 100%;
+  max-width: 3.5 * $icon_width;
   height: 3 * $icon_height;
   display: flex;
   justify-content: space-between;
   padding: 0.3 * $icon_width;
-  background: linear-gradient(45deg, grey 0%, lightgray 100%);
-  border-top: 1px solid rgba(white, 0.6);
-  border-right: 1px solid rgba(white, 0.6);
-  border-left: 1px solid rgba(black, 0.4);
-  border-bottom: 1px solid rgba(black, 0.4);
-  box-shadow: -2px 2px 3px rgba(black, 0.3);
-  border-radius: 3px;
+  background: linear-gradient(45deg, $casino-black 0%, $casino-dark 100%);
+  border: 8px solid $casino-gold;
+  border-radius: 15px;
+  box-shadow: 
+    0 0 20px rgba(0, 0, 0, 0.5),
+    inset 0 0 20px rgba(0, 0, 0, 0.3);
+  margin: 20px auto;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+    padding: 10px;
+    
+    .reel {
+      width: calc(33.33% - 10px);
+      height: auto;
+      aspect-ratio: 1;
+    }
+  }
   
   &::before, 
   &::after {
-    content:"";
+    content: "";
     position: absolute;
     top: 50%;
-    width: 20px;
-    height: 2px;
-    background-color: rgba(#4caf50, 1);
+    width: 30px;
+    height: 4px;
+    background: linear-gradient(90deg, $casino-gold, $casino-gold-dark);
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    transform: translate(-200%, -50%) translateY(-4px);
   }
   
   &::before {
     left: 0;
-    transform: translate(-200%, -50%);
   }
   
   &::after {
     right: 0;
-    transform: translate(200%, -50%);
+    transform: translate(200%, -50%) translateY(-4px);
   }
   
   @keyframes win1 {
     0% {
-      background: linear-gradient(45deg, orange 0%, yellow 100%); 
-      box-shadow: 0 0 80px orange
+      background: linear-gradient(45deg, $casino-gold 0%, $casino-gold-dark 100%); 
+      box-shadow: 0 0 80px $casino-gold;
     }
     100% {
-      background: linear-gradient(45deg, grey 0%, lightgrey 100%);
-      box-shadow: -2px 2px 3px rgba(black, 0.3);
+      background: linear-gradient(45deg, $casino-black 0%, $casino-dark 100%);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     }
   }
   
   @keyframes win2 {
     0% {
-      background: linear-gradient(45deg, lightblue 0%, lightgreen 100%); 
-      box-shadow: 0 0 80px lightgreen
+      background: linear-gradient(45deg, $casino-gold 0%, $casino-gold-dark 100%); 
+      box-shadow: 0 0 80px $casino-gold;
     }
     100% {
-      background: linear-gradient(45deg, grey 0%, lightgrey 100%);
-      box-shadow: -2px 2px 3px rgba(black, 0.3);
+      background: linear-gradient(45deg, $casino-black 0%, $casino-dark 100%);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     }
   }
   
@@ -96,13 +187,13 @@ body {
   .reel {
     position: relative;
     width: $icon_width;
-    //height: 3 * $icon_height;
-    border: 1px solid rgba(black, 0.3);
-    border-radius: 3px;
+    border: 2px solid $casino-gold;
+    border-radius: 8px;
     overflow: hidden;
     background-image: url(/lotero-icons.png);
-    background-position: 0 0;
+    background-position: 0 -40px;
     background-repeat: repeat-y;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
     
     &::after {
       content: "";
@@ -111,10 +202,14 @@ body {
       left: 0;
       width: 100%;
       height: 100%;
-      background-image: linear-gradient(rgba(black, 0.4) 0%, transparent 30%, transparent 70%, rgba(black, 0.4) 100%);
-      box-shadow: inset 0 0 6px 2px rgba(black, 0.3);
+      background-image: linear-gradient(
+        rgba(0, 0, 0, 0.4) 0%,
+        transparent 30%,
+        transparent 70%,
+        rgba(0, 0, 0, 0.4) 100%
+      );
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
     }
-
   }
   
   p {
@@ -132,16 +227,73 @@ body {
 }
 
 #slotMachineTitle {
-  margin-top:40px;
+  margin-top: 0;
+  margin-bottom: 40px;
+  text-align: center;
+  
+  .block {
+    &:first-child {
+      font-size: 48px;
+      font-weight: 800;
+      color: #ecf0f1;
+      text-shadow: 
+        2px 2px 4px rgba(0, 0, 0, 0.3),
+        0 0 20px rgba(255, 215, 0, 0.5);
+      margin-bottom: 10px;
+      background: linear-gradient(45deg, $casino-gold, $casino-gold-dark);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: titleGlow 2s ease-in-out infinite;
+    }
+    
+    &:last-child {
+      font-size: 24px;
+      color: #bdc3c7;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+  }
 }
 
-#rewardsTitle{
-  margin-top:-2px;
+@keyframes titleGlow {
+  0% {
+    text-shadow: 
+      2px 2px 4px rgba(0, 0, 0, 0.3),
+      0 0 20px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    text-shadow: 
+      2px 2px 4px rgba(0, 0, 0, 0.3),
+      0 0 40px rgba(255, 215, 0, 0.8);
+  }
+  100% {
+    text-shadow: 
+      2px 2px 4px rgba(0, 0, 0, 0.3),
+      0 0 20px rgba(255, 215, 0, 0.5);
+  }
 }
 
-#claimButton{
-  margin-top:-11px;
-  margin-left:15px;
+#rewardsTitle {
+  margin-top: -2px;
+}
+
+#claimButton {
+  margin-top: -11px;
+  margin-left: 0;
+  padding: 10px 20px;
+  background: linear-gradient(to bottom, $casino-gold 5%, $casino-gold-dark 100%);
+  color: $casino-black;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  text-transform: uppercase;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+  }
 }
 
 .referral-input {
@@ -195,19 +347,36 @@ body {
 // New styles for the columns
 .columns {
   display: flex;
-  justify-content: space-around;
-  margin-bottom: 20px;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  margin-bottom: 40px;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    justify-content: space-around;
+  }
 
   .column {
     flex: 1;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    margin-right: 10px;
+    padding: 20px;
+    border-radius: 10px;
+    background: linear-gradient(45deg, $casino-black 0%, $casino-dark 100%);
+    box-shadow: 
+      0 0 20px rgba(0, 0, 0, 0.3),
+      inset 0 0 10px rgba(255, 255, 255, 0.1);
+    border: 2px solid $casino-gold;
+    width: 100%;
 
     h2 {
-      font-size: 18px;
-      margin-bottom: 10px;
+      font-size: 24px;
+      margin-bottom: 15px;
+      color: #ecf0f1;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      font-weight: bold;
     }
 
     .row {
@@ -215,153 +384,123 @@ body {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 10px;
+      padding: 10px;
+
+      // Quitar el fondo de todas las filas
+      background: none;
+
+      // Quitar el fondo de la fila del botón Claim y ajustar su alineación
+      &:last-child {
+        background: none;
+        display: flex;
+        align-items: center;
+        padding: 0;
+        margin: 0;
+        margin-top: 20px;
+      }
+
+      &.referral-text {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 0;
+        margin-top: 20px;
+        margin-bottom: 0;
+        margin-left: 15px;
+
+        p {
+          color: #ecf0f1;
+          font-size: 14px;
+          margin: 0;
+        }
+
+        a {
+          color: $casino-gold;
+          text-decoration: none;
+          font-size: 14px;
+          transition: all 0.3s ease;
+          display: inline-block;
+
+          &:hover {
+            color: $casino-gold-dark;
+            text-decoration: underline;
+          }
+
+          &.vibrate {
+            animation: vibrate 0.3s linear infinite;
+            animation-play-state: paused;
+
+            &:hover {
+              animation-play-state: running;
+            }
+          }
+        }
+      }
 
       .balance,
       .wins,
       .referrals {
         display: flex;
         align-items: center;
+        color: #ecf0f1;
 
         span {
-          margin-right: 5px;
+          margin-right: 10px;
+          font-size: 18px;
+        }
+
+        svg {
+          width: 30px;
+          height: 30px;
+          filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
         }
       }
 
       .pay-table-button,
       .claim-button {
-        padding: 8px 16px;
-        background-color: #4caf50;
-        color: white;
+        width: 100%;
+        padding: 10px 0;
+        background: linear-gradient(to bottom, $casino-gold 5%, $casino-gold-dark 100%);
+        color: $casino-black;
         border: none;
         border-radius: 5px;
         cursor: pointer;
+        font-weight: bold;
+        text-transform: uppercase;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        transition: all 0.3s ease;
+        margin: 0;
+        text-align: center;
 
         &:hover {
-          background-color: #45a049;
+          transform: translateY(-2px);
+          box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+      }
+
+      // Alinear el botón Pay table a la derecha en móvil
+      @media (max-width: 768px) {
+        &:last-child {
+          justify-content: flex-end;
+          padding-right: 0;
         }
       }
 
       .info-icon {
-        font-size: 18px;
+        font-size: 20px;
         cursor: pointer;
-      }
-    }
-  }
-}
-// New styles for the columns
-.columns {
-	display: flex;
-	justify-content: space-around;
-	margin-bottom: 20px;
-  
-	.column {
-	  flex: 1;
-	  padding: 10px;
-	  border-radius: 5px;
-	  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-	  margin-right: 10px;
-  
-	  h2 {
-		font-size: 18px;
-		margin-bottom: 10px;
-	  }
-  
-	  .row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 10px;
-  
-		.balance,
-		.wins,
-		.referrals {
-		  display: flex;
-		  align-items: center;
-  
-		  span {
-			margin-right: 5px;
-		  }
-		}
-  
-		.pay-table-button,
-		.claim-button {
-		  padding: 8px 16px;
-		  background-color: #4caf50;
-		  color: white;
-		  border: none;
-		  border-radius: 5px;
-		  cursor: pointer;
-  
-		  &:hover {
-			background-color: #45a049;
-		  }
-		}
-  
-		.info-icon {
-		  font-size: 18px;
-		  cursor: pointer;
-		}
-	  }
-	}
-  }
-
-  // New styles for the columns
-.columns {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 20px;
-
-  .column {
-    flex: 1;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    margin-right: 10px;
-
-    h2 {
-      font-size: 18px;
-      margin-bottom: 10px;
-    }
-
-    .row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-
-      .balance,
-      .wins,
-      .referrals {
-        display: flex;
-        align-items: center;
-
-        span {
-          margin-right: 5px;
-        }
-
-		svg {
-			width: 30px;
-			height: 30px;
-		  }
-      }
-
-      .pay-table-button,
-      .claim-button {
-        padding: 8px 16px;
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
+        color: #ecf0f1;
+        transition: all 0.3s ease;
 
         &:hover {
-          background-color: #45a049;
+          transform: scale(1.2);
         }
       }
 
-      .info-icon {
-        font-size: 18px;
-        cursor: pointer;
+      &:has(.referrals) {
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        margin-top: 20px;
+        padding-top: 20px;
       }
     }
   }
@@ -375,14 +514,39 @@ body {
 	position: relative;
   
 	.play-form {
-	  position: absolute;
-    bottom: 100px; // Ajusta la posición vertical según sea necesario, puedes cambiar el valor
-    right: 50%; // Centra horizontalmente
-    transform: translateX(50%); // Centra horizontalmente
-	  display: flex;
-	  align-items: center;
+	  position: relative;
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
 
+    .spin-button {
+      width: 100%;
+      padding: 15px 30px;
+      background: linear-gradient(to bottom, #ffd700 5%, #ffb400 100%);
+      color: $casino-black;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 24px;
+      text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      transition: all 0.3s ease;
+      margin: 0;
+      text-align: center;
+      animation: pulse 2s infinite;
 
+      &:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+      }
+
+      &.playing {
+        background-color: gray;
+        animation: none;
+      }
+    }
 	}
 
 	.action-button {
@@ -391,38 +555,195 @@ body {
 		color: white;
 		align-items: center;
 		justify-content: center;
-		font-size: 1.2rem; // Adjust the font 
+		font-size: 1.2rem;
 		text-align: center;
 		text-decoration: none;
-		font-size: 16px;
 		cursor: pointer;
 		border: none;
 		border-radius: 50%;
-		margin-left: 5px; /* Adjust the margin as needed */
-		width: 100px; // Set the width and height for a circular shape
+		margin-left: 5px;
+		width: 100px;
 		height: 100px;
-		// Additional casino-style button styles
-		background: linear-gradient(to bottom, #4caf50 5%, #27ae60 100%);
-		filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#2ecc71', endColorstr='#27ae60',GradientType=0);
-		border: 1px solid #1e6a5a;
+		background: linear-gradient(to bottom, $casino-gold 5%, $casino-gold-dark 100%);
+		border: 3px solid $casino-gold-dark;
+		box-shadow: 
+			0 0 20px rgba(255, 215, 0, 0.3),
+			inset 0 0 10px rgba(255, 255, 255, 0.2);
+		transition: all 0.3s ease;
 		
+		&:hover {
+			transform: scale(1.05);
+			box-shadow: 
+				0 0 30px rgba(255, 215, 0, 0.5),
+				inset 0 0 15px rgba(255, 255, 255, 0.3);
+		}
+		
+		&:active {
+			transform: scale(0.95);
+		}
 	}
 
 	// Apply the shared style to other buttons
 	.spin-button {
 		@extend .action-button;
-      // Nuevos estilos para el botón de giro
-  background: linear-gradient(to bottom, #4caf50 5%, #27ae60 100%); // Mantén tus colores originales
-  border: 1px solid #1e6a5a;
-  border-radius: 50%; // Ajusta el radio para que sea un círculo
-  width: 100px; // Ajusta el ancho según sea necesario
-  height: 100px; // Ajusta la altura según sea necesario
-  margin-left: 0; // Ajusta el margen izquierdo para centrar el botón
-  position: relative; // Añade esta línea para permitir ajustes de posición
-
-  &:hover {
-    background: #45a049; // Mantén el color de fondo original al hacer hover
-  }
 	}
 
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+}
+
+.modal {
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+  }
+
+  .modal-box {
+    background: linear-gradient(45deg, $casino-black 0%, $casino-dark 100%);
+    border: 3px solid $casino-gold;
+    border-radius: 15px;
+    box-shadow: 
+      0 0 30px rgba(0, 0, 0, 0.5),
+      inset 0 0 20px rgba(255, 255, 255, 0.1);
+    color: #ecf0f1;
+    max-width: 500px;
+    padding: 30px;
+
+    h3 {
+      font-size: 28px;
+      text-align: center;
+      margin-bottom: 20px;
+      color: #ecf0f1;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-content {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .reel-results-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+
+      .reel-result {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+
+        &:hover {
+          transform: scale(1.1);
+        }
+      }
+    }
+
+    .modal-action {
+      text-align: center;
+      margin-top: 20px;
+
+      .btn {
+        background: linear-gradient(to bottom, $casino-gold 5%, $casino-gold-dark 100%);
+        color: $casino-black;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 30px;
+        font-size: 18px;
+        font-weight: bold;
+        text-transform: uppercase;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+      }
+    }
+  }
+}
+
+.pay-table {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+
+    th, td {
+      padding: 15px;
+      text-align: center;
+      color: #ecf0f1;
+    }
+
+    th {
+      font-size: 18px;
+      text-transform: uppercase;
+      border-bottom: 2px solid $casino-gold;
+    }
+
+    tr {
+      background: rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease;
+
+      &:hover {
+        transform: scale(1.02);
+      }
+    }
+
+    td {
+      font-size: 16px;
+
+      &:first-child {
+        border-radius: 8px 0 0 8px;
+      }
+
+      &:last-child {
+        border-radius: 0 8px 8px 0;
+      }
+    }
+  }
+}
+
+@keyframes vibrate {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
 }
