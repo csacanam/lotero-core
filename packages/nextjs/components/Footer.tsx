@@ -3,17 +3,13 @@ import Link from "next/link";
 import { hardhat } from "viem/chains";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { HeartIcon } from "@heroicons/react/24/outline";
-import { SwitchTheme } from "~~/components/SwitchTheme";
-//import { BuidlGuidlLogo } from "~~/components/assets/BuidlGuidlLogo";
 import { Faucet } from "~~/components/scaffold-eth";
-//import { useGlobalState } from "~~/services/store/store";
 import { getTargetNetwork } from "~~/utils/scaffold-eth";
 
 /**
  * Site footer
  */
 export const Footer = () => {
-  //const nativeCurrencyPrice = useGlobalState(state => state.nativeCurrencyPrice);
   const isLocalNetwork = getTargetNetwork().id === hardhat.id;
 
   return (
@@ -21,14 +17,6 @@ export const Footer = () => {
       <div>
         <div className="flex justify-between items-center w-full p-4">
           <div className="flex flex-col md:flex-row gap-2">
-            {/*{nativeCurrencyPrice > 0 && (
-              <div>
-                <div className="btn btn-primary btn-sm font-normal normal-case gap-1 cursor-auto">
-                  <CurrencyDollarIcon className="h-4 w-4" />
-                  <span>{nativeCurrencyPrice}</span>
-                </div>
-              </div>
-            )} */}
             {isLocalNetwork && (
               <>
                 <Faucet />
@@ -39,7 +27,6 @@ export const Footer = () => {
               </>
             )}
           </div>
-          <SwitchTheme className={isLocalNetwork ? "self-end md:self-auto" : ""} />
         </div>
       </div>
       <div className="w-full">

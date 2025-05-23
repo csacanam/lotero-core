@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/router";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { formatUnits } from "viem";
 import { useAccount, useContractEvent, useContractRead, useContractWrite } from "wagmi";
 import externalContracts from "~~/contracts/externalContracts";
@@ -383,6 +384,48 @@ const SlotMachine = (): JSX.Element => {
     clickSound.play();
   };
 
+  //Claim wins function
+  const { writeAsync: claimWins } = useContractWrite({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
+    functionName: "claimPlayerEarnings",
+    args: [connectedAddress as string],
+    onSettled(data, error) {
+      if (data) {
+        console.log("Claim settled", { data, error });
+        refetchBalance(); // Actualiza el balance
+        refetchUserInfo(); // Actualiza los "wins" y "referrals"
+      } else {
+        console.log("Error claiming", error?.message);
+      }
+    },
+    onError(error) {
+      console.error("Error claiming:", error);
+      alert("An error occurred while claiming. Please try again later.");
+    },
+  });
+
+  //Claim referrals function
+  const { writeAsync: claimReferrals } = useContractWrite({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
+    functionName: "claimPlayerEarnings",
+    args: [connectedAddress as string],
+    onSettled(data, error) {
+      if (data) {
+        console.log("Claim settled", { data, error });
+        refetchBalance(); // Actualiza el balance
+        refetchUserInfo(); // Actualiza los "wins" y "referrals"
+      } else {
+        console.log("Error claiming", error?.message);
+      }
+    },
+    onError(error) {
+      console.error("Error claiming:", error);
+      alert("An error occurred while claiming. Please try again later.");
+    },
+  });
+
   useEffect(() => {
     if (!isPlaying) {
       // Actualiza el balance y la información del usuario cuando el juego termina
@@ -390,6 +433,14 @@ const SlotMachine = (): JSX.Element => {
       refetchUserInfo();
     }
   }, [isPlaying, refetchBalance, refetchUserInfo]);
+
+  const { openConnectModal } = useConnectModal();
+
+  const handleConnect = () => {
+    if (openConnectModal) {
+      openConnectModal();
+    }
+  };
 
   return (
     <div className="container">
@@ -406,37 +457,47 @@ const SlotMachine = (): JSX.Element => {
           </div>
           <div className="row">
             <div className="balance">
-              <span>
-                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0 0 48 48">
-                  <circle cx="24" cy="24" r="20" fill="#26a69a"></circle>
-                  <rect width="18" height="5" x="15" y="13" fill="#fff"></rect>
-                  <path
-                    fill="#fff"
-                    d="M24,21c-4.457,0-12,0.737-12,3.5S19.543,28,24,28s12-0.737,12-3.5S28.457,21,24,21z M24,26 c-5.523,0-10-0.895-10-2c0-1.105,4.477-2,10-2s10,0.895,10,2C34,25.105,29.523,26,24,26z"
-                  ></path>
-                  <path
-                    fill="#fff"
-                    d="M24,24c1.095,0,2.093-0.037,3-0.098V13h-6v10.902C21.907,23.963,22.905,24,24,24z"
-                  ></path>
-                  <path
-                    fill="#fff"
-                    d="M25.723,25.968c-0.111,0.004-0.223,0.007-0.336,0.01C24.932,25.991,24.472,26,24,26 s-0.932-0.009-1.387-0.021c-0.113-0.003-0.225-0.006-0.336-0.01c-0.435-0.015-0.863-0.034-1.277-0.06V36h6V25.908 C26.586,25.934,26.158,25.953,25.723,25.968z"
-                  ></path>
-                </svg>
-              </span>
-              {connectedAddress && <span>{formatUnits(tokenUserBalance || 0n, 6)?.toString()}</span>}
+              {connectedAddress && (
+                <span>
+                  <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0 0 48 48">
+                    <circle cx="24" cy="24" r="20" fill="#26a69a"></circle>
+                    <rect width="18" height="5" x="15" y="13" fill="#fff"></rect>
+                    <path
+                      fill="#fff"
+                      d="M24,21c-4.457,0-12,0.737-12,3.5S19.543,28,24,28s12-0.737,12-3.5S28.457,21,24,21z M24,26 c-5.523,0-10-0.895-10-2c0-1.105,4.477-2,10-2s10,0.895,10,2C34,25.105,29.523,26,24,26z"
+                    ></path>
+                    <path
+                      fill="#fff"
+                      d="M24,24c1.095,0,2.093-0.037,3-0.098V13h-6v10.902C21.907,23.963,22.905,24,24,24z"
+                    ></path>
+                    <path
+                      fill="#fff"
+                      d="M25.723,25.968c-0.111,0.004-0.223,0.007-0.336,0.01C24.932,25.991,24.472,26,24,26 s-0.932-0.009-1.387-0.021c-0.113-0.003-0.225-0.006-0.336-0.01c-0.435-0.015-0.863-0.034-1.277-0.06V36h6V25.908 C26.586,25.934,26.158,25.953,25.723,25.968z"
+                    ></path>
+                  </svg>
+                </span>
+              )}
+              {connectedAddress ? (
+                <span>{formatUnits(tokenUserBalance || 0n, 6)?.toString()}</span>
+              ) : (
+                <span>Please connect your wallet to play</span>
+              )}
             </div>
           </div>
           <div className="row">
             <button
               className="pay-table-button"
               onClick={() => {
-                const modal = document.getElementById("paytable_modal") as HTMLDialogElement | null;
-                modal?.showModal();
+                if (connectedAddress) {
+                  const modal = document.getElementById("paytable_modal") as HTMLDialogElement | null;
+                  modal?.showModal();
+                } else {
+                  handleConnect();
+                }
               }}
-              style={{ width: "calc(100% - 30px)", marginLeft: "15px" }}
+              style={{ marginLeft: "15px" }}
             >
-              Pay table
+              {connectedAddress ? "Pay table" : "CONNECT WALLET"}
             </button>
           </div>
         </div>
@@ -471,11 +532,13 @@ const SlotMachine = (): JSX.Element => {
                       alert("An error occurred while playing. Please try again later.");
                     }
                   }
+                } else if (!connectedAddress) {
+                  handleConnect();
                 }
               }}
-              disabled={isPlaying || !connectedAddress || !tokenUserBalance || tokenUserBalance < BigInt(1000000)}
+              disabled={isPlaying || (!!connectedAddress && (!tokenUserBalance || tokenUserBalance < BigInt(1000000)))}
             >
-              {isPlaying ? "PLAYING..." : "🎰 SPIN NOW"}
+              {isPlaying ? "PLAYING..." : connectedAddress ? "🎰 SPIN NOW" : "CONNECT WALLET"}
             </button>
           </div>
         </div>
@@ -487,86 +550,134 @@ const SlotMachine = (): JSX.Element => {
           </div>
           <div className="row">
             <div className="wins">
-              <span>Wins:</span>
-              <span>
-                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0 0 48 48">
-                  <circle cx="24" cy="24" r="20" fill="#26a69a"></circle>
-                  <rect width="18" height="5" x="15" y="13" fill="#fff"></rect>
-                  <path
-                    fill="#fff"
-                    d="M24,21c-4.457,0-12,0.737-12,3.5S19.543,28,24,28s12-0.737,12-3.5S28.457,21,24,21z M24,26 c-5.523,0-10-0.895-10-2c0-1.105,4.477-2,10-2s10,0.895,10,2C34,25.105,29.523,26,24,26z"
-                  ></path>
-                  <path
-                    fill="#fff"
-                    d="M24,24c1.095,0,2.093-0.037,3-0.098V13h-6v10.902C21.907,23.963,22.905,24,24,24z"
-                  ></path>
-                  <path
-                    fill="#fff"
-                    d="M25.723,25.968c-0.111,0.004-0.223,0.007-0.336,0.01C24.932,25.991,24.472,26,24,26 s-0.932-0.009-1.387-0.021c-0.113-0.003-0.225-0.006-0.336-0.01c-0.435-0.015-0.863-0.034-1.277-0.06V36h6V25.908 C26.586,25.934,26.158,25.953,25.723,25.968z"
-                  ></path>
-                </svg>
-              </span>
-              {connectedAddress && (
-                <span>{formatUnits(BigInt(userInfo.moneyEarned - userInfo.moneyClaimed), 6)?.toString()}</span>
-              )}
-            </div>
-          </div>
-          <div className="row">
-            <button id="claimWinsButton" className="claim-button">
-              Claim Wins
-            </button>
-          </div>
-          <div className="row">
-            <div className="referrals">
-              <span>Referrals:</span>
-              <span>
-                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0 0 48 48">
-                  <circle cx="24" cy="24" r="20" fill="#26a69a"></circle>
-                  <rect width="18" height="5" x="15" y="13" fill="#fff"></rect>
-                  <path
-                    fill="#fff"
-                    d="M24,21c-4.457,0-12,0.737-12,3.5S19.543,28,24,28s12-0.737,12-3.5S28.457,21,24,21z M24,26 c-5.523,0-10-0.895-10-2c0-1.105,4.477-2,10-2s10,0.895,10,2C34,25.105,29.523,26,24,26z"
-                  ></path>
-                  <path
-                    fill="#fff"
-                    d="M24,24c1.095,0,2.093-0.037,3-0.098V13h-6v10.902C21.907,23.963,22.905,24,24,24z"
-                  ></path>
-                  <path
-                    fill="#fff"
-                    d="M25.723,25.968c-0.111,0.004-0.223,0.007-0.336,0.01C24.932,25.991,24.472,26,24,26 s-0.932-0.009-1.387-0.021c-0.113-0.003-0.225-0.006-0.336-0.01c-0.435-0.015-0.863-0.034-1.277-0.06V36h6V25.908 C26.586,25.934,26.158,25.953,25.723,25.968z"
-                  ></path>
-                </svg>
-              </span>
+              {connectedAddress && <span>Wins:</span>}
               {connectedAddress && (
                 <span>
-                  {formatUnits(BigInt(userInfo.earnedByReferrals - userInfo.claimedByReferrals), 6)?.toString()}
+                  <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0 0 48 48">
+                    <circle cx="24" cy="24" r="20" fill="#26a69a"></circle>
+                    <rect width="18" height="5" x="15" y="13" fill="#fff"></rect>
+                    <path
+                      fill="#fff"
+                      d="M24,21c-4.457,0-12,0.737-12,3.5S19.543,28,24,28s12-0.737,12-3.5S28.457,21,24,21z M24,26 c-5.523,0-10-0.895-10-2c0-1.105,4.477-2,10-2s10,0.895,10,2C34,25.105,29.523,26,24,26z"
+                    ></path>
+                    <path
+                      fill="#fff"
+                      d="M24,24c1.095,0,2.093-0.037,3-0.098V13h-6v10.902C21.907,23.963,22.905,24,24,24z"
+                    ></path>
+                    <path
+                      fill="#fff"
+                      d="M25.723,25.968c-0.111,0.004-0.223,0.007-0.336,0.01C24.932,25.991,24.472,26,24,26 s-0.932-0.009-1.387-0.021c-0.113-0.003-0.225-0.006-0.336-0.01c-0.435-0.015-0.863-0.034-1.277-0.06V36h6V25.908 C26.586,25.934,26.158,25.953,25.723,25.968z"
+                    ></path>
+                  </svg>
                 </span>
               )}
+              {connectedAddress ? (
+                <span>{formatUnits(BigInt(userInfo.moneyEarned - userInfo.moneyClaimed), 6)?.toString()}</span>
+              ) : (
+                <span>Please connect your wallet to play</span>
+              )}
             </div>
-          </div>
-          <div className="row referral-text">
-            <p>Invite friends and earn rewards!</p>
-            <a
-              href="#"
-              onClick={e => {
-                e.preventDefault();
-                const modal = document.getElementById("referral_modal") as HTMLDialogElement | null;
-                modal?.showModal();
-              }}
-              className="vibrate"
-            >
-              🔗 Get your referral link
-            </a>
           </div>
           <div className="row">
             <button
-              id="claimReferralsButton"
+              id="claimWinsButton"
               className="claim-button"
-              style={{ width: "calc(100% - 30px)", marginLeft: "15px" }}
+              onClick={async () => {
+                if (connectedAddress) {
+                  try {
+                    await claimWins();
+                  } catch (error: any) {
+                    console.error("Error in claim wins function:", error);
+                    if (error.message?.includes("internal error")) {
+                      alert("There was an internal error. Please try again in a few moments.");
+                    } else {
+                      alert("An error occurred while claiming. Please try again later.");
+                    }
+                  }
+                } else {
+                  handleConnect();
+                }
+              }}
             >
-              Claim Referrals
+              {connectedAddress ? "Claim Wins" : "CONNECT WALLET"}
             </button>
           </div>
+          {connectedAddress && (
+            <>
+              <div className="row">
+                <div className="referrals">
+                  <span>Referrals:</span>
+                  <span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      x="0px"
+                      y="0px"
+                      width="100"
+                      height="100"
+                      viewBox="0 0 48 48"
+                    >
+                      <circle cx="24" cy="24" r="20" fill="#26a69a"></circle>
+                      <rect width="18" height="5" x="15" y="13" fill="#fff"></rect>
+                      <path
+                        fill="#fff"
+                        d="M24,21c-4.457,0-12,0.737-12,3.5S19.543,28,24,28s12-0.737,12-3.5S28.457,21,24,21z M24,26 c-5.523,0-10-0.895-10-2c0-1.105,4.477-2,10-2s10,0.895,10,2C34,25.105,29.523,26,24,26z"
+                      ></path>
+                      <path
+                        fill="#fff"
+                        d="M24,24c1.095,0,2.093-0.037,3-0.098V13h-6v10.902C21.907,23.963,22.905,24,24,24z"
+                      ></path>
+                      <path
+                        fill="#fff"
+                        d="M25.723,25.968c-0.111,0.004-0.223,0.007-0.336,0.01C24.932,25.991,24.472,26,24,26 s-0.932-0.009-1.387-0.021c-0.113-0.003-0.225-0.006-0.336-0.01c-0.435-0.015-0.863-0.034-1.277-0.06V36h6V25.908 C26.586,25.934,26.158,25.953,25.723,25.968z"
+                      ></path>
+                    </svg>
+                  </span>
+                  <span>
+                    {formatUnits(BigInt(userInfo.earnedByReferrals - userInfo.claimedByReferrals), 6)?.toString()}
+                  </span>
+                </div>
+              </div>
+              <div className="row referral-text">
+                <p>Invite friends and earn rewards!</p>
+                <a
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault();
+                    const modal = document.getElementById("referral_modal") as HTMLDialogElement | null;
+                    modal?.showModal();
+                  }}
+                  className="vibrate"
+                >
+                  🔗 Get your referral link
+                </a>
+              </div>
+              <div className="row">
+                <button
+                  id="claimReferralsButton"
+                  className="claim-button"
+                  style={{ marginLeft: "15px" }}
+                  onClick={async () => {
+                    if (connectedAddress) {
+                      try {
+                        await claimReferrals();
+                      } catch (error: any) {
+                        console.error("Error in claim referrals function:", error);
+                        if (error.message?.includes("internal error")) {
+                          alert("There was an internal error. Please try again in a few moments.");
+                        } else {
+                          alert("An error occurred while claiming. Please try again later.");
+                        }
+                      }
+                    } else {
+                      handleConnect();
+                    }
+                  }}
+                >
+                  {connectedAddress ? "Claim Referrals" : "CONNECT WALLET"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

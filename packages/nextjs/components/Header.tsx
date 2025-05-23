@@ -12,17 +12,7 @@ interface HeaderMenuLink {
   icon?: React.ReactNode;
 }
 
-export const menuLinks: HeaderMenuLink[] = [
-  {
-    label: "Home",
-    href: "/",
-  },
-  /*{
-    label: "Debug Contracts",
-    href: "/debug",
-    icon: <BugAntIcon className="h-4 w-4" />,
-  },*/
-];
+export const menuLinks: HeaderMenuLink[] = [];
 
 export const HeaderMenuLinks = () => {
   const router = useRouter();
@@ -62,7 +52,13 @@ export const Header = () => {
   );
 
   return (
-    <div className="sticky lg:static top-0 navbar bg-base-100 min-h-0 flex-shrink-0 justify-between z-20 shadow-md shadow-secondary px-0 sm:px-2">
+    <div
+      className="sticky lg:static top-0 navbar min-h-0 flex-shrink-0 justify-between z-20 px-0 sm:px-2"
+      style={{
+        background: "linear-gradient(45deg, #1a1a1a 0%, #2c2c2c 100%)",
+        boxShadow: "0 0 20px rgba(255, 215, 0, 0.3)",
+      }}
+    >
       <div className="navbar-start w-auto lg:w-1/2">
         <div className="lg:hidden dropdown" ref={burgerMenuRef}>
           <label
