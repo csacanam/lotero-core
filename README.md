@@ -42,7 +42,7 @@ Extends SlotMachine with `playFor`:
 
 Useful for meta-transactions, sponsored plays, or gifting spins.
 
-### Agent (Slot Spin Execution Service)
+### Lotero Agent
 
 Stateless HTTP API that sells spins as a service. Pays 1.05 USDC via x402 and relays `playFor` onchain. See [packages/agent/README.md](packages/agent/README.md).
 
@@ -60,7 +60,7 @@ yarn agent:dev    # Dev with watch
 
 ```
 packages/
-├── agent/            # Slot Spin Execution Service — x402 + onchain relay
+├── agent/            # Lotero Agent — x402 + onchain relay
 │   └── src/
 ├── hardhat/          # Smart contracts, tests, deploy scripts
 │   ├── contracts/

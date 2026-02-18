@@ -1,5 +1,5 @@
 /**
- * Slot Spin Execution Service (Base)
+ * Lotero Agent (Base)
  *
  * Execute provably fair slot spins on Base using Chainlink VRF.
  * Gasless for caller via x402 payment in USDC.
@@ -211,7 +211,7 @@ app.post("/spinWith1USDC", async (req, res) => {
 /** GET / (service info) */
 app.get("/", (_req, res) => {
   res.json({
-    name: "Slot Spin Execution Service (Base)",
+    name: "Lotero Agent (Base)",
     description:
       "Execute provably fair slot spins on Base using Chainlink VRF. Gasless for caller via x402 payment in USDC.",
     endpoints: {
@@ -315,6 +315,6 @@ app.get("/contract/health", async (_req, res) => {
 
 app.listen(PORT, () => {
   console.log(
-    `Slot Spin Execution Service listening at http://localhost:${PORT}`,
+    `Lotero Agent listening at http://localhost:${PORT}`,
   );
 });

@@ -1,4 +1,4 @@
-# Slot Spin Execution Service (Base)
+# Lotero Agent (Base)
 
 Execute provably fair slot spins on Base using Chainlink VRF. Gasless for caller agents via x402 payment in USDC.
 
