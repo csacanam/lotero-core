@@ -9,7 +9,9 @@
 
 import "dotenv/config";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { ethers } from "ethers";
+import { generateJwt } from "@coinbase/cdp-sdk/auth";
 import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
@@ -46,6 +48,14 @@ const MIN_SUBSCRIPTION_LINK_JUELS = process.env.MIN_SUBSCRIPTION_LINK_JUELS
   ? ethers.BigNumber.from(process.env.MIN_SUBSCRIPTION_LINK_JUELS)
   : ethers.utils.parseEther("0.3"); // 0.1 LINK
 
+// Rate limit for read-only endpoints (per IP)
+const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000; // 1 min
+const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX) || 60; // 60 req/min
+
+// Rate limit for paid route when no x402 payment header (avoid facilitator spam)
+const RATE_LIMIT_NO_PAYMENT_MAX =
+  Number(process.env.RATE_LIMIT_NO_PAYMENT_MAX) || 10; // 10 req/min per IP
+
 if (!SLOT_MACHINE_ADDRESS || !EXECUTOR_PRIVATE_KEY || !PAY_TO) {
   console.error(
     "Missing required env: SLOT_MACHINE_ADDRESS, EXECUTOR_PRIVATE_KEY, PAY_TO",
@@ -67,8 +77,68 @@ const vrfCoordinator = new ethers.Contract(
   provider,
 );
 
+// USDC Base mainnet
+const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+const ERC20_APPROVE_ABI = [
+  "function approve(address spender, uint256 amount) returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)",
+];
+
 // ─── x402 ───────────────────────────────────────────────────────────────────
-const facilitatorClient = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
+const CDP_API_KEY_ID = process.env.CDP_API_KEY_ID;
+const CDP_API_KEY_SECRET = process.env.CDP_API_KEY_SECRET;
+const isCdpFacilitator = FACILITATOR_URL.includes("api.cdp.coinbase.com");
+
+function buildFacilitatorClient() {
+  const config = { url: FACILITATOR_URL };
+
+  if (isCdpFacilitator && CDP_API_KEY_ID && CDP_API_KEY_SECRET) {
+    const facilitatorUrl = new URL(FACILITATOR_URL);
+    const host = facilitatorUrl.host;
+    const basePath = facilitatorUrl.pathname.replace(/\/$/, "") || "";
+
+    config.createAuthHeaders = async () => {
+      const [supportedJwt, verifyJwt, settleJwt] = await Promise.all([
+        generateJwt({
+          apiKeyId: CDP_API_KEY_ID,
+          apiKeySecret: CDP_API_KEY_SECRET,
+          requestMethod: "GET",
+          requestHost: host,
+          requestPath: `${basePath}/supported`,
+        }),
+        generateJwt({
+          apiKeyId: CDP_API_KEY_ID,
+          apiKeySecret: CDP_API_KEY_SECRET,
+          requestMethod: "POST",
+          requestHost: host,
+          requestPath: `${basePath}/verify`,
+        }),
+        generateJwt({
+          apiKeyId: CDP_API_KEY_ID,
+          apiKeySecret: CDP_API_KEY_SECRET,
+          requestMethod: "POST",
+          requestHost: host,
+          requestPath: `${basePath}/settle`,
+        }),
+      ]);
+      return {
+        supported: { Authorization: `Bearer ${supportedJwt}` },
+        verify: { Authorization: `Bearer ${verifyJwt}` },
+        settle: { Authorization: `Bearer ${settleJwt}` },
+      };
+    };
+  } else if (isCdpFacilitator) {
+    console.error(
+      "CDP facilitator requires CDP_API_KEY_ID and CDP_API_KEY_SECRET in .env.\n" +
+        "Create Secret API Keys at https://portal.cdp.coinbase.com/projects/api-keys"
+    );
+    process.exit(1);
+  }
+
+  return new HTTPFacilitatorClient(config);
+}
+
+const facilitatorClient = buildFacilitatorClient();
 const resourceServer = new x402ResourceServer(facilitatorClient).register(
   "eip155:8453",
   new ExactEvmScheme(),
@@ -77,6 +147,28 @@ const resourceServer = new x402ResourceServer(facilitatorClient).register(
 // ─── Express app ────────────────────────────────────────────────────────────
 const app = express();
 app.use(express.json());
+
+// Rate limit for paid route when no x402 payment header (avoid saturation from empty requests)
+// If under limit, pass to payment middleware which returns proper 402 with payment instructions
+const noPaymentRateLimit = rateLimit({
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: RATE_LIMIT_NO_PAYMENT_MAX,
+  message: { error: "Too many requests. Include x402 payment to execute spin." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use((req, res, next) => {
+  if (req.method !== "POST" || req.path !== "/spinWith1USDC") {
+    return next();
+  }
+  const hasPayment = req.get("payment-signature") || req.get("x-payment");
+  if (hasPayment) {
+    return next(); // Has payment header, let payment middleware verify with facilitator
+  }
+  noPaymentRateLimit(req, res, next); // Under limit → next() so middleware returns proper 402
+});
+
 app.use(
   paymentMiddleware(
     {
@@ -208,8 +300,16 @@ app.post("/spinWith1USDC", async (req, res) => {
 
 // ─── Routes: read-only ──────────────────────────────────────────────────────
 
+const readOnlyRateLimit = rateLimit({
+  windowMs: RATE_LIMIT_WINDOW_MS,
+  max: RATE_LIMIT_MAX,
+  message: { error: "Too many requests, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 /** GET / (service info) */
-app.get("/", (_req, res) => {
+app.get("/", readOnlyRateLimit, (_req, res) => {
   res.json({
     name: "Lotero Agent (Base)",
     description:
@@ -225,7 +325,7 @@ app.get("/", (_req, res) => {
 });
 
 /** GET /round/:requestId */
-app.get("/round/:requestId", async (req, res) => {
+app.get("/round/:requestId", readOnlyRateLimit, async (req, res) => {
   try {
     const requestId = req.params.requestId;
     const resolved = await slotMachine.isResolved(requestId);
@@ -250,7 +350,7 @@ app.get("/round/:requestId", async (req, res) => {
 });
 
 /** GET /player/:address/balances */
-app.get("/player/:address/balances", async (req, res) => {
+app.get("/player/:address/balances", readOnlyRateLimit, async (req, res) => {
   try {
     const addr = req.params.address;
     if (!ethers.utils.isAddress(addr)) {
@@ -259,6 +359,7 @@ app.get("/player/:address/balances", async (req, res) => {
     const user = await slotMachine.infoPerUser(addr);
     return res.json({
       address: addr,
+      moneyAdded: user.moneyAdded.toString(),
       moneyEarned: user.moneyEarned.toString(),
       moneyClaimed: user.moneyClaimed.toString(),
       earnedByReferrals: user.earnedByReferrals.toString(),
@@ -270,7 +371,7 @@ app.get("/player/:address/balances", async (req, res) => {
 });
 
 /** GET /contract/health */
-app.get("/contract/health", async (_req, res) => {
+app.get("/contract/health", readOnlyRateLimit, async (_req, res) => {
   try {
     const [moneyInContract, maxBet, closed, useNative] = await Promise.all([
       slotMachine.getMoneyInContract(),
@@ -311,10 +412,39 @@ app.get("/contract/health", async (_req, res) => {
   }
 });
 
-// ─── Start ──────────────────────────────────────────────────────────────────
+// ─── Startup: ensure USDC approval, then listen ──────────────────────────────
 
-app.listen(PORT, () => {
-  console.log(
-    `Lotero Agent listening at http://localhost:${PORT}`,
+async function ensureUsdcApproval() {
+  const usdc = new ethers.Contract(
+    USDC_BASE,
+    ERC20_APPROVE_ABI,
+    executorWallet,
   );
+  const allowance = await usdc.allowance(
+    executorWallet.address,
+    SLOT_MACHINE_ADDRESS,
+  );
+  if (!allowance.isZero()) {
+    console.log("[startup] USDC already approved for SlotMachineV2");
+    return;
+  }
+  console.log("[startup] Approving USDC for SlotMachineV2...");
+  const tx = await usdc.approve(
+    SLOT_MACHINE_ADDRESS,
+    ethers.constants.MaxUint256,
+  );
+  await tx.wait();
+  console.log("[startup] USDC approved. Tx:", tx.hash);
+}
+
+async function start() {
+  await ensureUsdcApproval();
+  app.listen(PORT, () => {
+    console.log(`Lotero Agent listening at http://localhost:${PORT}`);
+  });
+}
+
+start().catch((err) => {
+  console.error("[startup] Failed:", err.message);
+  process.exit(1);
 });
