@@ -52,4 +52,3 @@ module.exports = async ({ getNamedAccounts, deployments, network }) => {
 };
 
 module.exports.tags = ["SlotMachineV2"];
-module.exports.dependencies = ["SlotMachine"];

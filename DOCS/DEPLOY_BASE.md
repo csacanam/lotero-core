@@ -44,8 +44,12 @@ BASE_VRF_SUBSCRIPTION_ID=123
 
 ```bash
 cd packages/hardhat
-yarn deploy --network base
+yarn deploy --network base --tags SlotMachine       # Only SlotMachine
+# or
+yarn deploy --network base --tags SlotMachineV2     # Only SlotMachineV2
 ```
+
+Pass `--network` and `--tags` to choose network and which contract(s) to deploy. This skips the mock VRF and MockUSDT used for local tests.
 
 Network configuration is in `packages/hardhat/networks.config.js`. Base uses real VRF, USDC, and requires `BASE_VRF_SUBSCRIPTION_ID` in `.env`.
 
@@ -59,26 +63,23 @@ Network configuration is in `packages/hardhat/networks.config.js`. Base uses rea
 
 ---
 
-## Step 5: Deposit USDC into the contract
+## Step 5: Fund the contract with USDC
 
-The contract needs USDC to pay prizes. After deploy:
-
-1. Approve the SlotMachine contract to spend your USDC
-2. Call `depositTokens(slotMachineAddress, amount)` to deposit USDC into the contract
-
-More USDC in the contract increases the bet limit (`getMaxValueToPlay()`).
+Send at least **30 USDC** to the contract address (from MetaMask or any wallet). The contract needs liquidity to pay prizes. More USDC increases the bet limit (`getMaxValueToPlay()`).
 
 ---
 
 ## Step 6: Verify contracts (optional)
 
 ```bash
-yarn hardhat verify --network base <CONTRACT_ADDRESS> <SUBSCRIPTION_ID> <VRF_COORDINATOR> <KEY_HASH> <USDC_ADDRESS>
+yarn hardhat verify --network base <CONTRACT_ADDRESS> <SUBSCRIPTION_ID> <VRF_COORDINATOR> <KEY_HASH> <USDC_ADDRESS> <USE_NATIVE_PAYMENT>
 ```
 
-Example:
+- `USE_NATIVE_PAYMENT`: `false` (LINK) or `true` (native token)
+
+Example (SlotMachineV2, LINK payment):
 ```bash
-yarn hardhat verify --network base 0x... 123 0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634 0xdc2f87677b01473c763cb0aee938ed3341512f6057324a584e5944e786144d70 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+yarn hardhat verify --network base 0x... 123 0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634 0x00b81b5a830cb0a4009fbd8904de511e28631e62ce5ad231373d3cdad373ccab 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 false
 ```
 
 ---

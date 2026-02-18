@@ -22,7 +22,7 @@ module.exports = {
   base: {
     useMock: false,
     vrfCoordinator: "0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634",
-    keyHash: "0xdc2f87677b01473c763cb0aee938ed3341512f6057324a584e5944e786144d70",
+    keyHash: "0x00b81b5a830cb0a4009fbd8904de511e28631e62ce5ad231373d3cdad373ccab",
     tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC
     subscriptionIdEnv: "BASE_VRF_SUBSCRIPTION_ID",
     useNativePayment: false,
