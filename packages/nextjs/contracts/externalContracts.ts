@@ -209,29 +209,78 @@ const externalContracts = {
                 {
                   indexed: true,
                   internalType: "uint256",
-                  name: "reqId",
+                  name: "requestId",
                   type: "uint256",
+                },
+                {
+                  indexed: true,
+                  internalType: "address",
+                  name: "payer",
+                  type: "address",
+                },
+                {
+                  indexed: true,
+                  internalType: "address",
+                  name: "player",
+                  type: "address",
                 },
                 {
                   indexed: false,
                   internalType: "uint256",
-                  name: "n1",
-                  type: "uint256",
-                },
-                {
-                  indexed: false,
-                  internalType: "uint256",
-                  name: "n2",
-                  type: "uint256",
-                },
-                {
-                  indexed: false,
-                  internalType: "uint256",
-                  name: "n3",
+                  name: "amount",
                   type: "uint256",
                 },
               ],
-              name: "ReceivedRandomness",
+              name: "SpinRequested",
+              type: "event",
+            },
+            {
+              anonymous: false,
+              inputs: [
+                {
+                  indexed: true,
+                  internalType: "uint256",
+                  name: "requestId",
+                  type: "uint256",
+                },
+                {
+                  indexed: true,
+                  internalType: "address",
+                  name: "player",
+                  type: "address",
+                },
+                {
+                  indexed: false,
+                  internalType: "bool",
+                  name: "hasWon",
+                  type: "bool",
+                },
+                {
+                  indexed: false,
+                  internalType: "uint256",
+                  name: "prize",
+                  type: "uint256",
+                },
+                {
+                  indexed: false,
+                  internalType: "uint8",
+                  name: "n1",
+                  type: "uint8",
+                },
+                {
+                  indexed: false,
+                  internalType: "uint8",
+                  name: "n2",
+                  type: "uint8",
+                },
+                {
+                  indexed: false,
+                  internalType: "uint8",
+                  name: "n3",
+                  type: "uint8",
+                },
+              ],
+              name: "SpinResolved",
               type: "event",
             },
             {
@@ -253,25 +302,6 @@ const externalContracts = {
               outputs: [],
               stateMutability: "nonpayable",
               type: "function",
-            },
-            {
-              anonymous: false,
-              inputs: [
-                {
-                  indexed: true,
-                  internalType: "uint256",
-                  name: "reqId",
-                  type: "uint256",
-                },
-                {
-                  indexed: true,
-                  internalType: "address",
-                  name: "invoker",
-                  type: "address",
-                },
-              ],
-              name: "RequestedRandomness",
-              type: "event",
             },
             {
               inputs: [

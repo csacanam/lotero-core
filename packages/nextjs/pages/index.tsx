@@ -2,15 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
-import { formatUnits } from "viem";
-import { useAccount, useContractEvent, useContractRead, useContractWrite } from "wagmi";
+import { formatUnits, keccak256, toBytes } from "viem";
+import { useAccount, useContractEvent, useContractRead, useContractWrite, useWaitForTransaction } from "wagmi";
 import externalContracts from "~~/contracts/externalContracts";
 import scaffoldConfig from "~~/scaffold.config";
 
 const SlotMachine = (): JSX.Element => {
   //General variables
-  let requestedReqId: bigint;
-  let receivedReqId: bigint;
   const reel = ["DOGE", "DOGE", "DOGE", "DOGE", "DOGE", "BNB", "BNB", "ETH", "ETH", "BTC"];
 
   //Results of game
@@ -21,14 +19,13 @@ const SlotMachine = (): JSX.Element => {
   //Slot Machine UI Variables
   const num_icons = 10;
   const icon_height = 79;
-  let isRolling = false;
+  const [isRolling, setIsRolling] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [, setRequestedReqId] = useState<bigint | null>(null);
   const rollIntervalRef = useRef<NodeJS.Timer | undefined>(undefined);
-  const [isPlaying, setIsPlaying] = useState(false); // State to track if the user is playing
-
-  // Audio element reference
   const casinoSoundRef = useRef<HTMLAudioElement | null>(null);
-  console.log("isRolling 1", isRolling);
-  console.log("rollInterval 1", rollIntervalRef);
+  const pendingRequestsRef = useRef<Set<string>>(new Set());
 
   //Get referral user address
   let referralUserAddress = "0x0000000000000000000000000000000000000000";
@@ -36,7 +33,6 @@ const SlotMachine = (): JSX.Element => {
   if (router.query.ref) {
     referralUserAddress = router.query.ref.toString();
   }
-  console.log("Referral User Address:", referralUserAddress);
 
   //Get deployedContracts
   const chainId = scaffoldConfig.targetNetwork.id;
@@ -45,7 +41,6 @@ const SlotMachine = (): JSX.Element => {
 
   //Get address of current user
   const { address: connectedAddress } = useAccount();
-  console.log("Current address", connectedAddress);
 
   //Create userInfo object
   const userInfo = {
@@ -65,7 +60,6 @@ const SlotMachine = (): JSX.Element => {
     functionName: "balanceOf",
     args: [connectedAddress as string],
   });
-  console.log("Current balance:", tokenUserBalance);
 
   //Get info from current user
   const { data: userInfoTx, refetch: refetchUserInfo } = useContractRead({
@@ -99,187 +93,226 @@ const SlotMachine = (): JSX.Element => {
   }
 
   //Get allowance of token
-  const { data: allowanceToken } = useContractRead({
+  useContractRead({
     address: mockUSDTContract.address,
     abi: mockUSDTContract.abi,
     functionName: "allowance",
     args: [connectedAddress as string, slotMachineContract.address],
   });
 
-  if (allowanceToken && allowanceToken >= BigInt(1000000)) {
-    console.log("Token is approved");
-  }
-  if (connectedAddress) {
-    console.log("Allowance: ", allowanceToken);
-  }
+  // Add event counter at the top of the component
+  const eventCounterRef = useRef(0);
+
+  // Add debug logs for contract configuration
+  useEffect(() => {
+    console.log("🔧 [DEBUG] Contract configuration:", {
+      address: slotMachineContract.address,
+      abi: slotMachineContract.abi,
+      events: (slotMachineContract.abi as unknown as Array<{ type?: string; name?: string }>)
+        .filter((item): item is { type: string; name: string } => item.type === "event")
+        .map(event => event.name),
+    });
+  }, [slotMachineContract]);
+
+  // Listen for SpinResolved event
+  useContractEvent({
+    address: slotMachineContract.address,
+    abi: slotMachineContract.abi,
+    eventName: "SpinResolved",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    listener(log: any[]) {
+      const counter = ++eventCounterRef.current;
+      console.log(`[Event #${counter}] 🎲 [DEBUG] SpinResolved event received`);
+      console.log(`[Event #${counter}] 📦 [DEBUG] Raw event:`, log[0]);
+      console.log(`[Event #${counter}] 🎲 [DEBUG] Event name:`, log[0].eventName);
+      console.log(`[Event #${counter}] 🎲 [DEBUG] Event args:`, log[0].args);
+
+      if (!log[0].args) {
+        console.error(`[Event #${counter}] ❌ [DEBUG] Event has no args property`);
+        return;
+      }
+
+      const args = log[0].args;
+      const receivedReqId = args.requestId as bigint;
+
+      console.log(`[Event #${counter}] 🔍 [DEBUG] Checking request ID:`, receivedReqId.toString());
+      console.log(`[Event #${counter}] 📋 [DEBUG] Pending requests:`, Array.from(pendingRequestsRef.current));
+
+      // Convert the received reqId to string for comparison
+      const reqIdString = receivedReqId.toString();
+
+      if (!pendingRequestsRef.current.has(reqIdString)) {
+        console.log(`[Event #${counter}] ⚠️ [DEBUG] Received randomness for unknown request ID:`, reqIdString);
+        return;
+      }
+
+      console.log(`[Event #${counter}] ✅ [DEBUG] Processing received randomness for request ID:`, reqIdString);
+      console.log(`[Event #${counter}] 🎲 [DEBUG] Random numbers:`, {
+        n1: args.n1?.toString(),
+        n2: args.n2?.toString(),
+        n3: args.n3?.toString(),
+      });
+
+      const firstNumber = args.n1 as bigint;
+      const secondNumber = args.n2 as bigint;
+      const thirdNumber = args.n3 as bigint;
+
+      const firstResult: number = +formatUnits(firstNumber, 0);
+      const secondResult: number = +formatUnits(secondNumber, 0);
+      const thirdResult: number = +formatUnits(thirdNumber, 0);
+
+      stopSoundCasino();
+      setFirstResult(firstResult);
+      setSecondResult(secondResult);
+      setThirdResult(thirdResult);
+      stopSlotMachine(firstResult, secondResult, thirdResult);
+
+      pendingRequestsRef.current.delete(reqIdString);
+      resetStates();
+
+      const modal = document.getElementById("result_modal") as HTMLDialogElement | null;
+      modal?.showModal();
+
+      if (reel[firstResult] === reel[secondResult] && reel[secondResult] === reel[thirdResult]) {
+        console.log(`[Event #${counter}] 🎉 [DEBUG] Player won!`);
+        startWinSound();
+      } else {
+        console.log(`[Event #${counter}] 😢 [DEBUG] Player lost`);
+      }
+    },
+  });
+
+  //Reset all states and clean up resources
+  const resetStates = () => {
+    setIsPlaying(false);
+    setIsRolling(false);
+    setIsWaitingForResponse(false);
+    setRequestedReqId(null);
+    stopSoundCasino();
+    if (rollIntervalRef.current) {
+      clearInterval(rollIntervalRef.current);
+      rollIntervalRef.current = undefined;
+    }
+  };
+
+  //Handle spin button click
+  const handleSpin = async () => {
+    console.log("🎯 [DEBUG] Spin button clicked");
+    if (connectedAddress && !isPlaying && !isWaitingForResponse) {
+      if (!tokenUserBalance || tokenUserBalance < BigInt(1000000)) {
+        console.log("❌ [DEBUG] Insufficient balance");
+        alert("You don't have enough USDT to play. Please add more funds.");
+        return;
+      }
+      try {
+        console.log("🎲 [DEBUG] Starting play process");
+        setIsPlaying(true);
+        startClickSound();
+        await play();
+      } catch (error: any) {
+        console.error("❌ [DEBUG] Error in play function:", error);
+        resetStates();
+        if (error.message?.includes("internal error")) {
+          alert("There was an internal error. Please try again in a few moments.");
+        } else {
+          alert("An error occurred while playing. Please try again later.");
+        }
+      }
+    } else if (!connectedAddress) {
+      console.log("🔌 [DEBUG] No wallet connected, opening connect modal");
+      handleConnect();
+    }
+  };
 
   //Play function
-  const { writeAsync: play } = useContractWrite({
+  const { writeAsync: play, data: playData } = useContractWrite({
     address: slotMachineContract.address,
     abi: slotMachineContract.abi,
     functionName: "play",
     args: [referralUserAddress, BigInt(1000000)],
     onSettled(data, error) {
       if (data) {
+        console.log("✅ [DEBUG] Play transaction settled successfully");
+        console.log("📝 [DEBUG] Transaction hash:", data.hash);
         startSoundCasino("/casino.mp3");
         startSlotMachine();
-        console.log("Settled", { data, error });
-        setIsPlaying(false); // Cambia el estado para detener el juego
-        refetchBalance(); // Actualiza el balance
-        refetchUserInfo(); // Actualiza los "wins" y "referrals"
+        refetchBalance();
+        refetchUserInfo();
       } else {
-        console.log("Error playing", error?.message);
+        console.log("❌ [DEBUG] Play transaction failed:", error?.message);
+        resetStates();
       }
     },
-    onError(error) {
-      console.error("Error playing:", error);
-      setIsPlaying(false); // Reset isPlaying state when randomness is received
+  });
 
-      if (error.message.includes("contract could not pay if user wins")) {
-        // Display friendly error message to the user
-        const modal = document.getElementById("error_modal") as HTMLDialogElement | null;
-        modal?.showModal();
+  // Wait for transaction and get logs
+  useWaitForTransaction({
+    hash: playData?.hash,
+    onSuccess: async receipt => {
+      console.log("✅ [DEBUG] Transaction successful");
+      console.log("📝 [DEBUG] Transaction hash:", receipt.transactionHash);
+      console.log("📝 [DEBUG] Transaction logs:", receipt.logs);
+
+      // Get the event signature from the ABI (SpinRequested replaced RequestedRandomness)
+      const spinRequestedEvent = (
+        slotMachineContract.abi as unknown as Array<{ type?: string; name?: string; inputs?: Array<{ type: string }> }>
+      ).find(item => item.type === "event" && item.name === "SpinRequested");
+
+      if (!spinRequestedEvent || !spinRequestedEvent.inputs) {
+        console.error("❌ [DEBUG] SpinRequested event not found in contract ABI");
+        resetStates();
+        return;
+      }
+
+      // Calculate the event signature
+      const eventSignature = `${spinRequestedEvent.name}(${spinRequestedEvent.inputs
+        .map((input: { type: string }) => input.type)
+        .join(",")})`;
+      const eventTopic = keccak256(toBytes(eventSignature));
+      console.log("🔍 [DEBUG] Looking for event with topic:", eventTopic);
+
+      // Get SpinRequested event from transaction logs
+      const requestedEvent = receipt.logs.find(log => {
+        console.log("🔍 [DEBUG] Checking log topic:", log.topics[0]);
+        return log.topics[0] === eventTopic;
+      });
+
+      if (requestedEvent && requestedEvent.topics[1]) {
+        console.log("🎲 [DEBUG] Found SpinRequested event:", requestedEvent);
+        // Convert the topic to a bigint to match the format in ReceivedRandomness
+        const reqId = BigInt(requestedEvent.topics[1]);
+        console.log("🎲 [DEBUG] SpinRequested from transaction - Request ID:", reqId.toString());
+        setRequestedReqId(reqId);
+        pendingRequestsRef.current.add(reqId.toString());
+        setIsWaitingForResponse(true);
       } else {
-        // Handle other errors
-        // Optionally, display a generic error message
-        alert("An error occurred while playing. Please try again later.");
+        console.log("❌ [DEBUG] SpinRequested event not found in transaction logs");
+        resetStates();
       }
+    },
+    onError: error => {
+      console.log("❌ [DEBUG] Transaction failed:", error.message);
+      resetStates();
     },
   });
 
-  /** 
-  useContractEvent({
+  // Claim wins function
+  const { writeAsync: claimWins } = useContractWrite({
     address: slotMachineContract.address,
     abi: slotMachineContract.abi,
-    eventName: "PlayCompleted",
-    listener(log) {
-      console.log("Game completed, updating UI");
-      refetchBalance();
-      refetchUserInfo();
-    },
-  });
-  
-  useContractEvent({
-    address: slotMachineContract.address,
-    abi: slotMachineContract.abi,
-    eventName: "Claimed",
-    listener(log) {
-      console.log("Claim completed, updating referrals and wins");
-      refetchUserInfo();
-    },
-  });*/
-
-  //Listen for RequestedRandomness event
-  useContractEvent({
-    address: slotMachineContract.address,
-    abi: slotMachineContract.abi,
-    eventName: "RequestedRandomness",
-    listener(log) {
-      let firstNumber;
-      let secondNumber;
-      let thirdNumber;
-
-      for (const entry of log) {
-        console.log("Entry ReqId: ", entry.eventName);
-        if (entry.eventName === "RequestedRandomness") {
-          console.log("Request Id 1:", entry.args.reqId);
-          console.log("Request Id 2:", receivedReqId);
-          requestedReqId = entry.args.reqId as bigint;
-        } else if (
-          entry.eventName === "ReceivedRandomness" &&
-          entry.args &&
-          "n1" in entry.args &&
-          "n2" in entry.args &&
-          "n3" in entry.args
-        ) {
-          console.log("Request Id 1:", requestedReqId);
-          console.log("Request Id 2:", entry.args.reqId);
-          receivedReqId = entry.args.reqId as bigint;
-          firstNumber = entry.args.n1 as number;
-          secondNumber = entry.args.n2 as number;
-          thirdNumber = entry.args.n3 as number;
-        }
-      }
-
-      if (requestedReqId === receivedReqId) {
-        stopSoundCasino();
-
-        console.log("Received!!");
-
-        const firstResult: number = +formatUnits(BigInt(firstNumber as any), 0);
-        const secondResult: number = +formatUnits(BigInt(secondNumber as any), 0);
-        const thirdResult: number = +formatUnits(BigInt(thirdNumber as any), 0);
-
-        // Set the results of the game
-        setFirstResult(firstResult);
-        setSecondResult(secondResult);
-        setThirdResult(thirdResult);
-
-        stopSlotMachine(firstResult, secondResult, thirdResult);
-        setIsPlaying(false); // Reset isPlaying state when randomness is received
-
-        //Open result modal
-        const modal = document.getElementById("result_modal") as HTMLDialogElement | null;
-        modal?.showModal();
-
-        if (reel[firstResult] == reel[secondResult] && reel[secondResult] == reel[thirdResult]) {
-          startWinSound();
-        }
-
-        console.log("Option 1", reel[firstResult]);
-        console.log("Option 1", firstResult);
-        console.log("Option 2", reel[secondResult]);
-        console.log("Option 2", secondResult);
-        console.log("Option 3", reel[thirdResult]);
-        console.log("Option 3", thirdResult);
-      }
-    },
+    functionName: "claimPlayerEarnings",
   });
 
-  //Listen for ReceivedRandomness event
-  /*useContractEvent({
+  // Claim referrals function
+  const { writeAsync: claimReferrals } = useContractWrite({
     address: slotMachineContract.address,
     abi: slotMachineContract.abi,
-    eventName: "ReceivedRandomness",
-    listener(log) {
-
-      receivedReqId = log[0].args.reqId as bigint;
-      stopSoundCasino();
-      if (requestedReqId == receivedReqId) {
-        console.log("Received!!");
-
-        const firstResult: number = +formatUnits(BigInt(log[4].args.n1 as any), 0);
-        const secondResult: number = +formatUnits(BigInt(log[4].args.n2 as any), 0);
-        const thirdResult: number = +formatUnits(BigInt(log[4].args.n3 as any), 0);
-
-        // Set the results of the game
-        setFirstResult(firstResult);
-        setSecondResult(secondResult);
-        setThirdResult(thirdResult);
-
-        stopSlotMachine(firstResult, secondResult, thirdResult);
-        setIsPlaying(false); // Reset isPlaying state when randomness is received
-
-        //Open result modal
-        const modal = document.getElementById("result_modal") as HTMLDialogElement | null;
-        modal?.showModal();
-
-        if (reel[firstResult] == reel[secondResult] && reel[secondResult] == reel[thirdResult]) {
-          startWinSound();
-        }
-        console.log("Option 1", reel[firstResult]);
-        console.log("Option 1", firstResult);
-        console.log("Option 2", reel[secondResult]);
-        console.log("Option 2", secondResult);
-        console.log("Option 3", reel[thirdResult]);
-        console.log("Option 3", thirdResult);
-      }
-    },
-  });*/
+    functionName: "claimPlayerEarnings",
+  });
 
   // Roll function for a single reel
   function rollReel(value: Element) {
-    const reel = value as HTMLElement; // Cast to HTMLElement
+    const reel = value as HTMLElement;
     const initialPosition = Math.floor(Math.random() * num_icons) * icon_height * -1 - 40;
     reel.style.backgroundPositionY = `${initialPosition}px`;
   }
@@ -293,19 +326,18 @@ const SlotMachine = (): JSX.Element => {
   // Start rolling the slots infinitely
   function startSlotMachine() {
     if (!isRolling) {
-      isRolling = true;
+      console.log("🎰 [DEBUG] Starting slot machine animation");
+      setIsRolling(true);
       rollAllReels();
       const interval = setInterval(rollAllReels, 50);
-      rollIntervalRef.current = interval; // Assign the interval to the ref
+      rollIntervalRef.current = interval;
     }
-    console.log("isRolling 2", isRolling);
-    console.log("rollInterval 2", rollIntervalRef);
   }
 
   //Stop slot machine function
   function stopSlotMachine(stop1Index: number, stop2Index: number, stop3Index: number) {
-    isRolling = false;
-
+    console.log("🛑 [DEBUG] Stopping slot machine with positions:", { stop1Index, stop2Index, stop3Index });
+    setIsRolling(false);
     const reels = document.querySelectorAll(".slots .reel");
 
     // Stop the first reel after a short delay
@@ -319,12 +351,51 @@ const SlotMachine = (): JSX.Element => {
         // Stop the third reel after a short delay
         setTimeout(() => {
           (reels[2] as HTMLElement).style.backgroundPositionY = `${stop3Index * icon_height - 40}px`;
-        }, 300); // Adjust the delay here for the desired effect
-      }, 300); // Adjust the delay here for the desired effect
-    }, 300); // Adjust the delay here for the desired effect
+          console.log("✅ [DEBUG] Slot machine stopped completely");
+        }, 300);
+      }, 300);
+    }, 300);
 
-    clearInterval(rollIntervalRef.current);
+    if (rollIntervalRef.current) {
+      clearInterval(rollIntervalRef.current);
+      rollIntervalRef.current = undefined;
+    }
   }
+
+  // Function to start the casino sound
+  const startSoundCasino = (soundSrc: string): void => {
+    if (casinoSoundRef.current) {
+      casinoSoundRef.current.src = soundSrc;
+      casinoSoundRef.current.loop = true;
+      casinoSoundRef.current.play().catch(error => {
+        console.error("Error playing sound:", error);
+      });
+    }
+  };
+
+  // Function to stop the casino sound
+  const stopSoundCasino = (): void => {
+    if (casinoSoundRef.current) {
+      casinoSoundRef.current.pause();
+      casinoSoundRef.current.currentTime = 0;
+    }
+  };
+
+  // Function to play the sound when the user clicks a button
+  const startClickSound = () => {
+    const clickSound = new Audio("/click.mp3");
+    clickSound.play().catch(error => {
+      console.error("Error playing click sound:", error);
+    });
+  };
+
+  // Function to play the sound when the user wins
+  const startWinSound = () => {
+    const winSound = new Audio("/win.mp3");
+    winSound.play().catch(error => {
+      console.error("Error playing win sound:", error);
+    });
+  };
 
   //Logic to copy referral link
   const [copied, setCopied] = useState(false);
@@ -354,85 +425,6 @@ const SlotMachine = (): JSX.Element => {
       alert("Please manually select and copy the referral link.");
     }
   };
-
-  // Function to start the casino sound
-  const startSoundCasino = (soundSrc: string): void => {
-    if (casinoSoundRef.current) {
-      casinoSoundRef.current.src = soundSrc;
-      casinoSoundRef.current.loop = true;
-      casinoSoundRef.current.play();
-    }
-  };
-
-  // Function to stop the casino sound
-  const stopSoundCasino = (): void => {
-    if (casinoSoundRef.current) {
-      casinoSoundRef.current.pause();
-      casinoSoundRef.current.currentTime = 0; // Reset the audio to the beginning
-    }
-  };
-
-  // Function to play the sound when the user clicks a button
-  const startClickSound = () => {
-    const clickSound = new Audio("/click.mp3"); // Assuming click.mp3 is the sound file
-    clickSound.play();
-  };
-
-  // Function to play the sound when the user wins
-  const startWinSound = () => {
-    const clickSound = new Audio("/win.mp3"); // Assuming click.mp3 is the sound file
-    clickSound.play();
-  };
-
-  //Claim wins function
-  const { writeAsync: claimWins } = useContractWrite({
-    address: slotMachineContract.address,
-    abi: slotMachineContract.abi,
-    functionName: "claimPlayerEarnings",
-    args: [connectedAddress as string],
-    onSettled(data, error) {
-      if (data) {
-        console.log("Claim settled", { data, error });
-        refetchBalance(); // Actualiza el balance
-        refetchUserInfo(); // Actualiza los "wins" y "referrals"
-      } else {
-        console.log("Error claiming", error?.message);
-      }
-    },
-    onError(error) {
-      console.error("Error claiming:", error);
-      alert("An error occurred while claiming. Please try again later.");
-    },
-  });
-
-  //Claim referrals function
-  const { writeAsync: claimReferrals } = useContractWrite({
-    address: slotMachineContract.address,
-    abi: slotMachineContract.abi,
-    functionName: "claimPlayerEarnings",
-    args: [connectedAddress as string],
-    onSettled(data, error) {
-      if (data) {
-        console.log("Claim settled", { data, error });
-        refetchBalance(); // Actualiza el balance
-        refetchUserInfo(); // Actualiza los "wins" y "referrals"
-      } else {
-        console.log("Error claiming", error?.message);
-      }
-    },
-    onError(error) {
-      console.error("Error claiming:", error);
-      alert("An error occurred while claiming. Please try again later.");
-    },
-  });
-
-  useEffect(() => {
-    if (!isPlaying) {
-      // Actualiza el balance y la información del usuario cuando el juego termina
-      refetchBalance();
-      refetchUserInfo();
-    }
-  }, [isPlaying, refetchBalance, refetchUserInfo]);
 
   const { openConnectModal } = useConnectModal();
 
@@ -513,32 +505,20 @@ const SlotMachine = (): JSX.Element => {
           <div className="play-form">
             <button
               className={`spin-button ${isPlaying ? "playing" : ""}`}
-              onClick={async () => {
-                if (connectedAddress && !isPlaying) {
-                  if (!tokenUserBalance || tokenUserBalance < BigInt(1000000)) {
-                    alert("You don't have enough USDT to play. Please add more funds.");
-                    return;
-                  }
-                  try {
-                    setIsPlaying(true);
-                    startClickSound();
-                    await play();
-                  } catch (error: any) {
-                    console.error("Error in play function:", error);
-                    setIsPlaying(false);
-                    if (error.message?.includes("internal error")) {
-                      alert("There was an internal error. Please try again in a few moments.");
-                    } else {
-                      alert("An error occurred while playing. Please try again later.");
-                    }
-                  }
-                } else if (!connectedAddress) {
-                  handleConnect();
-                }
-              }}
-              disabled={isPlaying || (!!connectedAddress && (!tokenUserBalance || tokenUserBalance < BigInt(1000000)))}
+              onClick={handleSpin}
+              disabled={
+                isPlaying ||
+                isWaitingForResponse ||
+                (!!connectedAddress && (!tokenUserBalance || tokenUserBalance < BigInt(1000000)))
+              }
             >
-              {isPlaying ? "PLAYING..." : connectedAddress ? "🎰 SPIN NOW" : "CONNECT WALLET"}
+              {isPlaying
+                ? "PLAYING..."
+                : isWaitingForResponse
+                ? "WAITING FOR RESULT..."
+                : connectedAddress
+                ? "🎰 SPIN NOW"
+                : "CONNECT WALLET"}
             </button>
           </div>
         </div>
