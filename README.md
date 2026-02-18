@@ -1,67 +1,123 @@
 # 🎰 Lotero
 
-> A decentralized slot machine with juicy rewards! 🚀
+A decentralized slot machine with verifiable randomness and on-chain rewards.
 
-🧪 Lotero is a DApp that allows people to bet their cryptocurrencies and multiply them by 30 with a Return to Player (RTP) of 93%. You can find how the mathematical model was built in the [RTP Model Excel File.](https://github.com/csacanam/lotero-core/blob/main/DOCS/rtp_model.xlsx)
+## Overview
 
-⚙️ Built using [Scaffold-ETH2](https://github.com/scaffold-eth/scaffold-eth-2/) and powered by NextJS, RainbowKit, Hardhat, Wagmi, and Typescript.
+Lotero lets users bet ERC20 tokens (e.g. USDT) and win prizes when three matching symbols appear on the reels. The game uses **Chainlink VRF 2.5** for provably fair randomness and is designed to be integrated by frontends or third-party apps.
 
-- ✅ **Contract Hot Reload**: Your frontend auto-adapts to your smart contract as you edit it.
-- 🔥 **Burner Wallet & Local Faucet**: Quickly test your application with a burner wallet and local faucet.
-- 🔐 **Integration with Wallet Providers**: Connect to different wallet providers and interact with the Ethereum network.
+- **RTP ~93%** — Mathematical model in [DOCS/RTP_MODEL.md](DOCS/RTP_MODEL.md) and [rtp_model.xlsx](DOCS/rtp_model.xlsx)
+- **Referral system** — 1% commission on referred players' bets
+- **Dev fee** — 5% of each bet to the team
+
+> ⚠️ **Frontend in development** — The web app in `packages/nextjs` is incomplete. The contracts are production-ready and can be used by any client.
+
+---
+
+## Smart Contracts
+
+### SlotMachine
+
+Main contract implementing the game logic.
+
+| Feature | Description |
+|---------|-------------|
+| **Token** | Uses an ERC20 for bets (e.g. USDT). Configurable at deployment. |
+| **Symbols** | DOGE, BNB, ETH, BTC with payouts: 5x, 14x, 20x, 30x |
+| **VRF** | Chainlink VRF 2.5 for secure randomness |
+| **Events** | `SpinRequested` (requestId, payer, player, amount), `SpinResolved` (requestId, player, hasWon, prize, n1, n2, n3) |
+
+**Core functions**
+
+- `play(referringUserAddress, amountToPlay)` — Bet and spin
+- `claimPlayerEarnings(userAddress)` — Claim winnings and referral earnings
+- `isResolved(requestId)` — Check if a round has been resolved
+- `rounds(requestId)` — Get full round data
+
+### SlotMachineV2
+
+Extends SlotMachine with `playFor`:
+
+- `playFor(player, referringUserAddress, amountToPlay)` — Pay on behalf of another address; the `player` receives the round, wins, and stats.
+
+Useful for meta-transactions, sponsored plays, or gifting spins.
+
+---
+
+## Project Structure
+
+```
+packages/
+├── hardhat/          # Smart contracts, tests, deploy scripts
+│   ├── contracts/
+│   │   ├── SlotMachine.sol
+│   │   ├── SlotMachineV2.sol
+│   │   └── test/     # Mocks (VRFCoordinatorV2PlusMock, MockUSDT)
+│   ├── deploy/
+│   └── test/
+└── nextjs/           # Web app (in development)
+```
+
+---
 
 ## Requirements
 
-Before you begin, you need to install the following tools:
+- [Node.js](https://nodejs.org/) v18+
+- [Yarn](https://yarnpkg.com/)
+- [Git](https://git-scm.com/)
 
-- [Node (v18 LTS)](https://nodejs.org/en/download/)
-- Yarn ([v1](https://classic.yarnpkg.com/en/docs/install/) or [v2+](https://yarnpkg.com/getting-started/install))
-- [Git](https://git-scm.com/downloads)
+---
 
-## Quickstart
+## Quick Start
 
-To get started with Lotero, follow the steps below:
+**1. Install dependencies**
 
-1. Clone this repo & install dependencies
-
-```
+```bash
 git clone https://github.com/csacanam/lotero-core.git
 cd lotero-core
 yarn install
 ```
 
-2. Run a local network in the first terminal:
+**2. Run local chain**
 
-```
+```bash
 yarn chain
 ```
 
-This command starts a local Ethereum network using Hardhat. The network runs on your local machine and can be used for testing and development. You can customize the network configuration in `hardhat.config.ts`.
+**3. Deploy contracts** (new terminal)
 
-3. On a second terminal, deploy the test contract:
-
-```
+```bash
 yarn deploy
 ```
 
-This command deploys a test smart contract to the local network. The contract is located in `packages/hardhat/contracts` and can be modified to suit your needs. The `yarn deploy` command uses the deploy script located in `packages/hardhat/deploy` to deploy the contract to the network. You can also customize the deploy script.
+This deploys VRF mock, MockUSDT, SlotMachine, and SlotMachineV2 to the local network.
 
-4. On a third terminal, start your NextJS app:
+**4. Run tests**
 
+```bash
+yarn hardhat:test
 ```
+
+**5. Start the frontend** (optional, in development)
+
+```bash
 yarn start
 ```
 
-Visit your app on: `http://localhost:3000`. You can interact with your smart contract using the `Debug Contracts` page. You can tweak the app config in `packages/nextjs/scaffold.config.ts`.
+App runs at `http://localhost:3000`.
 
-Run smart contract test with `yarn hardhat:test`
+---
 
-- Edit your smart contract `SlotMachine.sol` in `packages/hardhat/contracts`
-- Edit your frontend in `packages/nextjs/pages`
-- Edit your deployment scripts in `packages/hardhat/deploy`
+## Production Deployment
 
-## Contributing to Scaffold-ETH 2
+For mainnet/testnet:
 
-I did this thanks to Scaffold-ETH 2 and you can make your contribution!
+1. Use the real Chainlink VRF 2.5 coordinator and subscription for your network. See [Chainlink VRF 2.5 Supported Networks](https://docs.chain.link/vrf/v2-5/supported-networks).
+2. Update deploy scripts with the correct `keyHash`, `subscriptionId`, and token address.
+3. Fund the VRF subscription with LINK.
 
-Please see [CONTRIBUTING.MD](https://github.com/scaffold-eth/scaffold-eth-2/blob/main/CONTRIBUTING.md) for more information and guidelines for contributing to Scaffold-ETH 2.
+---
+
+## License
+
+GPL-3.0
