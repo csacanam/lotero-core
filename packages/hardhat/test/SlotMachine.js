@@ -16,9 +16,9 @@ describe("Decentralized Slot Machine", async function () {
   describe("1. CONTRACTS DEPLOYMENT", function () {
     it("Contracts deployed", async function () {
       const SlotMachine = await ethers.getContractFactory("SlotMachine");
-      let vrfCoordinatorV2Mock = await ethers.getContractFactory("VRFCoordinatorV2Mock");
+      const VRFCoordinatorV2PlusMock = await ethers.getContractFactory("VRFCoordinatorV2PlusMock");
 
-      hardhatVrfCoordinatorV2Mock = await vrfCoordinatorV2Mock.deploy(0, 0);
+      hardhatVrfCoordinatorV2Mock = await VRFCoordinatorV2PlusMock.deploy();
 
       await hardhatVrfCoordinatorV2Mock.createSubscription();
 
@@ -29,9 +29,7 @@ describe("Decentralized Slot Machine", async function () {
       let mockUSDTContractFactory = await ethers.getContractFactory("MockUSDT");
       mockUSDT = await mockUSDTContractFactory.deploy();
 
-      myContract = await SlotMachine.deploy(1, hardhatVrfCoordinatorV2Mock.address, keyHash, mockUSDT.address, {
-        value: ethers.utils.parseEther("7"),
-      });
+      myContract = await SlotMachine.deploy(1, hardhatVrfCoordinatorV2Mock.address, keyHash, mockUSDT.address);
 
       await hardhatVrfCoordinatorV2Mock.addConsumer(1, myContract.address);
 
@@ -55,14 +53,14 @@ describe("Decentralized Slot Machine", async function () {
       const approveTx = await mockUSDT.connect(account1).approve(myContract.address, amountToTransfer);
       await approveTx.wait();
 
-      const transferTx = await myContract.connect(account1).depositUsdtTokens(myContract.address, amountToTransfer);
+      const transferTx = await myContract.connect(account1).depositTokens(myContract.address, amountToTransfer);
       await transferTx.wait();
 
       // Transfer 10 MockUSDT from account 1 to account 2
       const approveTx2 = await mockUSDT.connect(account1).approve(myContract.address, amountToTransfer2);
       await approveTx2.wait();
 
-      const transferTx2 = await myContract.connect(account1).depositUsdtTokens(account2.address, amountToTransfer2);
+      const transferTx2 = await myContract.connect(account1).depositTokens(account2.address, amountToTransfer2);
       await transferTx2.wait();
 
       // Check the updated balances
@@ -78,7 +76,7 @@ describe("Decentralized Slot Machine", async function () {
     //2. PLAY
     describe("2. PLAY", function () {
       describe("Round # 1 - First Player", function () {
-        it("ReceivedRandomness is emitted", async () => {
+        it("SpinResolved is emitted", async () => {
           const usdtinContract = await myContract.getMoneyInContract();
           console.log("Money in contract: " + ethers.utils.formatUnits(usdtinContract, 6));
           const currentDebt = await myContract.getCurrentDebt();
@@ -93,12 +91,12 @@ describe("Decentralized Slot Machine", async function () {
           let tx = await myContract.play(ethers.constants.AddressZero, amountToPlay);
           let { events } = await tx.wait();
 
-          let [reqId] = events.filter(x => x.event === "RequestedRandomness")[0].args;
+          let [reqId] = events.filter(x => x.event === "SpinRequested")[0].args;
 
           //VRFCoordinator Response
           await expect(hardhatVrfCoordinatorV2Mock.fulfillRandomWords(reqId, myContract.address)).to.emit(
             myContract,
-            "ReceivedRandomness",
+            "SpinResolved",
           );
         });
 
@@ -156,7 +154,7 @@ describe("Decentralized Slot Machine", async function () {
       });
 
       describe("Round # 2 - First Player", function () {
-        it("ReceivedRandomness is emitted", async () => {
+        it("SpinResolved is emitted", async () => {
           //Approve tx
           const amountToPlay = ethers.utils.parseUnits("1", 6);
           const approveTx = await mockUSDT.connect(account1).approve(myContract.address, amountToPlay);
@@ -166,12 +164,12 @@ describe("Decentralized Slot Machine", async function () {
           let tx = await myContract.play(ethers.constants.AddressZero, amountToPlay);
           let { events } = await tx.wait();
 
-          let [reqId] = events.filter(x => x.event === "RequestedRandomness")[0].args;
+          let [reqId] = events.filter(x => x.event === "SpinRequested")[0].args;
 
           //VRFCoordinator Response
           await expect(hardhatVrfCoordinatorV2Mock.fulfillRandomWords(reqId, myContract.address)).to.emit(
             myContract,
-            "ReceivedRandomness",
+            "SpinResolved",
           );
         });
 
@@ -229,7 +227,7 @@ describe("Decentralized Slot Machine", async function () {
       });
 
       describe("Round # 3 - Second Player", function () {
-        it("ReceivedRandomness is emitted", async () => {
+        it("SpinResolved is emitted", async () => {
           let myContractAsAccount2 = myContract.connect(account2);
 
           //Approve before play
@@ -241,12 +239,12 @@ describe("Decentralized Slot Machine", async function () {
           let tx = await myContractAsAccount2.play(account1.address, amountToPlay);
           let { events } = await tx.wait();
 
-          let [reqId] = events.filter(x => x.event === "RequestedRandomness")[0].args;
+          let [reqId] = events.filter(x => x.event === "SpinRequested")[0].args;
 
           //VRFCoordinator Response
           await expect(hardhatVrfCoordinatorV2Mock.fulfillRandomWords(reqId, myContract.address)).to.emit(
             myContract,
-            "ReceivedRandomness",
+            "SpinResolved",
           );
         });
 
@@ -315,7 +313,7 @@ describe("Decentralized Slot Machine", async function () {
       });
 
       describe("Round # 4 - Second Player", function () {
-        it("ReceivedRandomness is emitted", async () => {
+        it("SpinResolved is emitted", async () => {
           let myContractAsAccount2 = myContract.connect(account2);
 
           //Approve before play
@@ -327,12 +325,12 @@ describe("Decentralized Slot Machine", async function () {
           let tx = await myContractAsAccount2.play(ethers.constants.AddressZero, amountToPlay);
           let { events } = await tx.wait();
 
-          let [reqId] = events.filter(x => x.event === "RequestedRandomness")[0].args;
+          let [reqId] = events.filter(x => x.event === "SpinRequested")[0].args;
 
           //VRFCoordinator Response
           await expect(
             hardhatVrfCoordinatorV2Mock.fulfillRandomWordsWithOverride(reqId, myContract.address, [1, 2, 3]),
-          ).to.emit(myContract, "ReceivedRandomness");
+          ).to.emit(myContract, "SpinResolved");
         });
 
         it("Check first player information", async () => {
@@ -927,7 +925,7 @@ describe("Decentralized Slot Machine", async function () {
           let myContractAsAccount2 = myContract.connect(account2);
 
           await expect(myContractAsAccount2.addTeamMember(account1.address, 60)).to.be.revertedWith(
-            "Ownable: caller is not the owner",
+            "Only callable by owner",
           );
           const teamMembersLength = await myContract.getTeamMembersLength();
           expect(teamMembersLength).to.be.equal(1);

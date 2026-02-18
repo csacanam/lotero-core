@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity >=0.8.26 <0.9.0;
+pragma solidity ^0.8.17;
 
-import "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
-import "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import "@chainlink/contracts/src/v0.8/dev/vrf/VRFConsumerBaseV2Plus.sol";
+import "@chainlink/contracts/src/v0.8/dev/vrf/libraries/VRFV2PlusClient.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "hardhat/console.sol";
 
+/**
+ * @title SlotMachine
+ * @notice VRF 2.5 compatible - uses VRFConsumerBaseV2Plus, RandomWordsRequest with extraArgs.
+ * @dev setCoordinator() inherited from base for future coordinator upgrades.
+ */
 contract SlotMachine is VRFConsumerBaseV2Plus {
 	//VRF Chainlink
 	uint256 subscriptionId;
@@ -15,9 +20,9 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 	uint16 requestConfirmations = 5;
 	uint32 numWords = 3;
 
-	//USDT Contract
-	address public usdtTokenAddress;
-	IERC20 public usdtToken;
+	//Payment token (ERC20)
+	address public tokenAddress;
+	IERC20 public token;
 
 	uint256 public constant MINIMUM_VALUE_TO_PLAY = 1 * 10 ** 6;
 	uint8 public constant INVALID_NUMBER = 20;
@@ -79,20 +84,28 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 	uint8 public constant REFERRAL_FEE = 1; //Referrral Fee - 1%
 
 	//Events
-	event ReceivedRandomness(
-		uint256 indexed reqId,
-		uint256 n1,
-		uint256 n2,
-		uint256 n3
+	event SpinRequested(
+		uint256 indexed requestId,
+		address indexed payer,
+		address indexed player,
+		uint256 amount
 	);
-	event RequestedRandomness(uint256 indexed reqId, address indexed invoker);
+	event SpinResolved(
+		uint256 indexed requestId,
+		address indexed player,
+		bool hasWon,
+		uint256 prize,
+		uint8 n1,
+		uint8 n2,
+		uint8 n3
+	);
 	event NewSymbol(Symbols symbol);
 
 	constructor(
 		uint256 _subscriptionId,
 		address _vrfCoordinator,
 		bytes32 _keyHash,
-		address _usdtTokenAddress
+		address _tokenAddress
 	) payable VRFConsumerBaseV2Plus(_vrfCoordinator) {
 		keyHash = _keyHash;
 		subscriptionId = _subscriptionId;
@@ -138,9 +151,9 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 			Symbols.BTC
 		];
 
-		//Initialize USDT Token
-		usdtTokenAddress = _usdtTokenAddress;
-		usdtToken = IERC20(_usdtTokenAddress);
+		//Initialize payment token
+		tokenAddress = _tokenAddress;
+		token = IERC20(_tokenAddress);
 	}
 
 	//1. CORE LOGIC
@@ -167,8 +180,8 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 			"Cannot add money because contract could not pay if user wins"
 		);
 
-		// Transfer the specified amount of USDT from the player to the contract
-		usdtToken.transferFrom(msg.sender, address(this), amountToPlay);
+		// Transfer the specified amount of tokens from the player to the contract
+		token.transferFrom(msg.sender, address(this), amountToPlay);
 
 		User storage currentUser = infoPerUser[msg.sender];
 		if (currentUser.active == false) {
@@ -216,7 +229,7 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 
 		rounds[requestId] = currentRound;
 
-		emit RequestedRandomness(requestId, msg.sender);
+		emit SpinRequested(requestId, msg.sender, msg.sender, amountToPlay);
 
 		return requestId;
 	}
@@ -228,7 +241,7 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 	 */
 	function fulfillRandomWords(
 		uint256 requestId,
-		uint256[] calldata randomWords
+		uint256[] memory randomWords
 	) internal override {
 		uint8 n1 = uint8(randomWords[0] % 10);
 		uint8 n2 = uint8(randomWords[1] % 10);
@@ -279,14 +292,14 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 		totalMoneyAdded += round.value;
 		totalMoneyEarnedByDevs += getDevFee(round.value);
 
-		emit ReceivedRandomness(requestId, n1, n2, n3);
+		emit SpinResolved(requestId, round.userAddress, round.hasWon, round.prize, n1, n2, n3);
 	}
 
 	/**
 	 *@dev Get total money in contract
 	 */
 	function getMoneyInContract() public view returns (uint256) {
-		return usdtToken.balanceOf(address(this));
+		return token.balanceOf(address(this));
 	}
 
 	/**
@@ -437,10 +450,10 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 			uint256 amountToPay = (totalPendingMoney * teamMember.percentage) /
 				100;
 
-			// Transfer USDT to the team member
+			// Transfer tokens to the team member
 			require(
-				usdtToken.transfer(teamMember.devAddress, amountToPay),
-				"Failed to transfer USDT"
+				token.transfer(teamMember.devAddress, amountToPay),
+				"Failed to transfer tokens"
 			);
 
 			totalMoneyClaimedByDevs += amountToPay;
@@ -465,10 +478,10 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 
 		require(moneyToClaim > 0, "User has claimed all the earnings");
 
-		// Transfer USDT to the user
+		// Transfer tokens to the user
 		require(
-			usdtToken.transfer(userAddress, moneyToClaim),
-			"Failed to transfer USDT"
+			token.transfer(userAddress, moneyToClaim),
+			"Failed to transfer tokens"
 		);
 
 		//Update user and global stats
@@ -491,6 +504,14 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 	 */
 	function getTeamMemberList() public view returns (TeamMember[] memory) {
 		return teamMembers;
+	}
+
+	/**
+	 * Check if a round has been resolved (VRF callback executed)
+	 * @param requestId VRF request id
+	 */
+	function isResolved(uint256 requestId) external view returns (bool) {
+		return rounds[requestId].number1 != INVALID_NUMBER;
 	}
 
 	/**
@@ -537,18 +558,18 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 	}
 
 	/**
-	 * Allow users to deposit usdt tokens in contract
+	 * Allow users to deposit tokens in contract
 	 * @param amount Number of tokens
 	 */
-	function depositUsdtTokens(address to, uint256 amount) external {
+	function depositTokens(address to, uint256 amount) external {
 		require(
-			usdtToken.transferFrom(msg.sender, to, amount),
+			token.transferFrom(msg.sender, to, amount),
 			"Transfer failed"
 		);
 	}
 
 	/*function withdrawTokens(address to, uint256 amount) external onlyOwner {
-		require(usdtToken.transfer(to, amount), "Transfer failed");
+		require(token.transfer(to, amount), "Transfer failed");
 		//emit TokensWithdrawn(to, amount);
 	}*/
 }

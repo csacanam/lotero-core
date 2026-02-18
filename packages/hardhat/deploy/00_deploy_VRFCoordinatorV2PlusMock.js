@@ -5,14 +5,14 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
   const { deployer } = await getNamedAccounts();
   let hardhatVrfCoordinatorV2Mock;
 
-  await deploy("VRFCoordinatorV2Mock", {
+  await deploy("VRFCoordinatorV2PlusMock", {
     from: deployer,
-    args: [0, 0],
+    args: [],
     log: true,
     waitConfirmations: 1,
   });
 
-  hardhatVrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2Mock");
+  hardhatVrfCoordinatorV2Mock = await ethers.getContract("VRFCoordinatorV2PlusMock");
 
   await hardhatVrfCoordinatorV2Mock.createSubscription();
 
