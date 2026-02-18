@@ -87,6 +87,13 @@ export const SlotMachineV2Abi = [
     type: "function",
   },
   {
+    inputs: [{ name: "userAddress", type: "address" }],
+    name: "claimPlayerEarnings",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "useNativePayment",
     outputs: [{ name: "", type: "bool" }],

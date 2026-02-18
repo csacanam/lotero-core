@@ -32,7 +32,8 @@
     "agent": "yarn workspace @lotero/agent start",
     "agent:dev": "yarn workspace @lotero/agent dev",
     "agent:spin:402": "yarn workspace @lotero/agent spin:402",
-    "agent:spin:paid": "yarn workspace @lotero/agent spin:paid"
+    "agent:spin:paid": "yarn workspace @lotero/agent spin:paid",
+    "agent:claim:paid": "yarn workspace @lotero/agent claim:paid"
   },
   "packageManager": "yarn@3.2.3",
   "devDependencies": {

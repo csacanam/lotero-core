@@ -34,6 +34,9 @@ const FACILITATOR_URL =
 const SPIN_AMOUNT = ethers.utils.parseUnits("1", 6); // 1 USDC (6 decimals)
 const SPIN_PRICE_USD = "1.05";
 
+// Claim pricing
+const CLAIM_PRICE_USD = "0.02";
+
 // Validation thresholds
 const MIN_EXECUTOR_ETH_WEI = ethers.BigNumber.from(
   process.env.MIN_EXECUTOR_ETH_WEI || "1000000000000000",
@@ -153,13 +156,16 @@ app.use(express.json());
 const noPaymentRateLimit = rateLimit({
   windowMs: RATE_LIMIT_WINDOW_MS,
   max: RATE_LIMIT_NO_PAYMENT_MAX,
-  message: { error: "Too many requests. Include x402 payment to execute spin." },
+  message: { error: "Too many requests. Include x402 payment to proceed." },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 app.use((req, res, next) => {
-  if (req.method !== "POST" || req.path !== "/spinWith1USDC") {
+  const paidPaths = ["/spinWith1USDC", "/claim"];
+  const isPaidRoute =
+    req.method === "POST" && paidPaths.some((p) => req.path === p);
+  if (!isPaidRoute) {
     return next();
   }
   const hasPayment = req.get("payment-signature") || req.get("x-payment");
@@ -176,12 +182,24 @@ app.use(
         accepts: [
           {
             scheme: "exact",
-            price: "$1.05", // USDC amount in dollars
-            network: "eip155:8453", // Base mainnet
+            price: "$1.05",
+            network: "eip155:8453",
             payTo: PAY_TO,
           },
         ],
         description: "Execute one slot spin (1 USDC bet) for player on Base",
+        mimeType: "application/json",
+      },
+      "POST /claim": {
+        accepts: [
+          {
+            scheme: "exact",
+            price: "$0.02",
+            network: "eip155:8453",
+            payTo: PAY_TO,
+          },
+        ],
+        description: "Claim player earnings (gasless, 0.02 USDC fee)",
         mimeType: "application/json",
       },
     },
@@ -300,6 +318,58 @@ app.post("/spinWith1USDC", async (req, res) => {
   }
 });
 
+/**
+ * POST /claim
+ * Flow: 1) x402 verifies payment 2) claimPlayerEarnings for user 3) return txHash
+ */
+app.post("/claim", async (req, res) => {
+  try {
+    const { user } = req.body || {};
+    if (
+      !user ||
+      typeof user !== "string" ||
+      !ethers.utils.isAddress(user)
+    ) {
+      return res.status(400).json({ error: "Invalid user address" });
+    }
+
+    const userInfo = await slotMachine.infoPerUser(user);
+    const moneyToClaimForPlay =
+      userInfo.moneyEarned.sub(userInfo.moneyClaimed);
+    const moneyToClaimForReferring =
+      userInfo.earnedByReferrals.sub(userInfo.claimedByReferrals);
+    const moneyToClaim = moneyToClaimForPlay.add(moneyToClaimForReferring);
+
+    if (moneyToClaim.isZero()) {
+      return res.status(400).json({
+        error: "Nothing to claim",
+        details: "User has already claimed all earnings",
+      });
+    }
+
+    const tx = await slotMachine.claimPlayerEarnings(user, {
+      gasLimit: 150000,
+    });
+    const receipt = await tx.wait();
+
+    console.log(
+      `[claim] user=${user} amount=${moneyToClaim.toString()} txHash=${receipt.transactionHash}`,
+    );
+
+    return res.json({
+      user,
+      amount: moneyToClaim.toString(),
+      txHash: receipt.transactionHash,
+      status: "claimed",
+    });
+  } catch (err) {
+    console.error("[claim] error:", err.message);
+    return res.status(500).json({
+      error: err.reason || err.message || "Claim failed",
+    });
+  }
+});
+
 // ─── Routes: read-only ──────────────────────────────────────────────────────
 
 const readOnlyRateLimit = rateLimit({
@@ -318,6 +388,7 @@ app.get("/", readOnlyRateLimit, (_req, res) => {
       "Execute provably fair slot spins on Base using Chainlink VRF. Gasless for caller via x402 payment in USDC.",
     endpoints: {
       "POST /spinWith1USDC": "Paid (1.05 USDC). Execute spin for player.",
+      "POST /claim": "Paid (0.02 USDC). Claim player earnings (gasless).",
       "GET /round/:requestId": "Get round result by requestId.",
       "GET /player/:address/balances":
         "Get player balances and referral stats.",

@@ -1,11 +1,11 @@
 # Agent scripts
 
-Scripts to test the `POST /spinWith1USDC` endpoint locally.
+Scripts to test the paid endpoints `POST /spinWith1USDC` and `POST /claim` locally.
 
 ## Requirements
 
 - Agent running (`yarn agent` or `yarn agent:dev` from project root).
-- For `spin-paid`: wallet with USDC on Base and `PAYER_PRIVATE_KEY` in `.env`.
+- For paid scripts: wallet with USDC on Base and `PAYER_PRIVATE_KEY` in `.env`.
 
 ## Scripts
 
@@ -59,6 +59,29 @@ yarn workspace @lotero/agent spin:paid [player] [url]
 
 Add `PAYER_PRIVATE_KEY` to `packages/agent/.env` (not in .env.example, which is a template).
 
+---
+
+### claim-paid
+
+Sends a POST **with** x402 payment (0.02 USDC). Claims earnings for a user (gasless).
+
+```bash
+yarn agent:claim:paid
+```
+
+**Optional arguments:**
+
+```bash
+yarn workspace @lotero/agent claim:paid [user] [url]
+```
+
+| Arg  | Default                 | Description                        |
+| ---- | ----------------------- | ---------------------------------- |
+| user | Payer address            | Address whose earnings to claim     |
+| url  | `http://localhost:4021` | Agent base URL                     |
+
+**Environment variables:** same as spin-paid (payer needs 0.02+ USDC on Base).
+
 ## Example flow
 
 ```bash
@@ -70,4 +93,7 @@ yarn agent:spin:402
 
 # 3. Add PAYER_PRIVATE_KEY to .env and test real payment
 yarn agent:spin:paid 0xYOUR_ADDRESS
+
+# 4. Claim earnings for a user
+yarn agent:claim:paid 0xUSER_ADDRESS
 ```
