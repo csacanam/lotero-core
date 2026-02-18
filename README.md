@@ -42,12 +42,26 @@ Extends SlotMachine with `playFor`:
 
 Useful for meta-transactions, sponsored plays, or gifting spins.
 
+### Agent (Slot Spin Execution Service)
+
+Stateless HTTP API that sells spins as a service. Pays 1.05 USDC via x402 and relays `playFor` onchain. See [packages/agent/README.md](packages/agent/README.md).
+
+- `POST /spinWith1USDC` — Paid endpoint (x402). Execute spin for `player`.
+- `GET /round/:requestId`, `GET /player/:address/balances`, `GET /contract/health` — Read-only.
+
+```bash
+yarn agent        # Start agent
+yarn agent:dev    # Dev with watch
+```
+
 ---
 
 ## Project Structure
 
 ```
 packages/
+├── agent/            # Slot Spin Execution Service — x402 + onchain relay
+│   └── src/
 ├── hardhat/          # Smart contracts, tests, deploy scripts
 │   ├── contracts/
 │   │   ├── SlotMachine.sol
