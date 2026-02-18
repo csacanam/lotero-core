@@ -120,4 +120,4 @@ For mainnet/testnet:
 
 ## License
 
-GPL-3.0
+MIT
