@@ -107,7 +107,7 @@ const config: HardhatUserConfig = {
       accounts: [deployerPrivateKey],
     },
     base: {
-      url: "https://mainnet.base.org",
+      url: `https://base-mainnet.g.alchemy.com/v2/${providerApiKey}`,
       accounts: [deployerPrivateKey],
     },
     baseGoerli: {
@@ -125,7 +125,10 @@ const config: HardhatUserConfig = {
   },
   verify: {
     etherscan: {
-      apiKey: `${etherscanApiKey}`,
+      apiKey: {
+        mainnet: etherscanApiKey,
+        base: etherscanApiKey, // Basescan uses the same API key
+      },
     },
   },
 };

@@ -29,7 +29,7 @@ describe("Decentralized Slot Machine", async function () {
       let mockUSDTContractFactory = await ethers.getContractFactory("MockUSDT");
       mockUSDT = await mockUSDTContractFactory.deploy();
 
-      myContract = await SlotMachine.deploy(1, hardhatVrfCoordinatorV2Mock.address, keyHash, mockUSDT.address);
+      myContract = await SlotMachine.deploy(1, hardhatVrfCoordinatorV2Mock.address, keyHash, mockUSDT.address, false);
 
       await hardhatVrfCoordinatorV2Mock.addConsumer(1, myContract.address);
 

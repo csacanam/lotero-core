@@ -15,8 +15,9 @@ contract SlotMachineV2 is SlotMachine {
 		uint256 _subscriptionId,
 		address _vrfCoordinator,
 		bytes32 _keyHash,
-		address _tokenAddress
-	) payable SlotMachine(_subscriptionId, _vrfCoordinator, _keyHash, _tokenAddress) {}
+		address _tokenAddress,
+		bool _useNativePayment
+	) payable SlotMachine(_subscriptionId, _vrfCoordinator, _keyHash, _tokenAddress, _useNativePayment) {}
 
 	/**
 	 * @dev Allow a sender to play on behalf of another user (player).
@@ -76,7 +77,7 @@ contract SlotMachineV2 is SlotMachine {
 				callbackGasLimit: callbackGasLimit,
 				numWords: numWords,
 				extraArgs: VRFV2PlusClient._argsToBytes(
-					VRFV2PlusClient.ExtraArgsV1({ nativePayment: false })
+					VRFV2PlusClient.ExtraArgsV1({ nativePayment: useNativePayment })
 				)
 			})
 		);

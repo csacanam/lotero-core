@@ -17,6 +17,8 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 	uint256 subscriptionId;
 	bytes32 keyHash;
 	uint32 callbackGasLimit = 300000;
+	/// @notice If true, VRF is paid in native token; if false, in LINK.
+	bool public useNativePayment;
 	uint16 requestConfirmations = 5;
 	uint32 numWords = 3;
 
@@ -105,10 +107,12 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 		uint256 _subscriptionId,
 		address _vrfCoordinator,
 		bytes32 _keyHash,
-		address _tokenAddress
+		address _tokenAddress,
+		bool _useNativePayment
 	) payable VRFConsumerBaseV2Plus(_vrfCoordinator) {
 		keyHash = _keyHash;
 		subscriptionId = _subscriptionId;
+		useNativePayment = _useNativePayment;
 
 		prize[0] = 5;
 		prize[1] = 14;
@@ -212,7 +216,7 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 				callbackGasLimit: callbackGasLimit,
 				numWords: numWords,
 				extraArgs: VRFV2PlusClient._argsToBytes(
-					VRFV2PlusClient.ExtraArgsV1({ nativePayment: false })
+					VRFV2PlusClient.ExtraArgsV1({ nativePayment: useNativePayment })
 				)
 			})
 		);
@@ -370,6 +374,14 @@ contract SlotMachine is VRFConsumerBaseV2Plus {
 
 		infoPerUser[referringUserAddress].earnedByReferrals += ((amountToAdd *
 			REFERRAL_FEE) / 100);
+	}
+
+	/**
+	 * @dev Set VRF payment mode: true = native token, false = LINK.
+	 * Only callable by owner. Switch subscription funding accordingly.
+	 */
+	function setUseNativePayment(bool _useNative) external onlyOwner {
+		useNativePayment = _useNative;
 	}
 
 	//2. DEV LOGIC

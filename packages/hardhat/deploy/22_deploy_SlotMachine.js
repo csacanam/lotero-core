@@ -1,34 +1,55 @@
 const { ethers } = require("hardhat");
+const networksConfig = require("../networks.config");
 
-//Key Hash
-const MUMBAI_KEY_HASH = "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f";
+module.exports = async ({ getNamedAccounts, deployments, network }) => {
+  const config = networksConfig[network.name];
+  if (!config) {
+    throw new Error(`No config for network "${network.name}". Add it to networks.config.js`);
+  }
 
-//Subscription
-const LOCAL_SUBSCRIPTION_ID = "1";
-
-module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  const keyHash = MUMBAI_KEY_HASH;
-  const subscriptionId = LOCAL_SUBSCRIPTION_ID;
 
-  //Get VRFCoordinator Address
-  const vrfCoordinatorContract = await ethers.getContract("VRFCoordinatorV2PlusMock", deployer);
-  const vrfCoordinatorAddress = vrfCoordinatorContract.address;
+  let vrfCoordinatorAddress;
+  let tokenAddress;
+  let subscriptionId;
 
-  //Get MockUSDT Address
-  const mockUSDTContract = await ethers.getContract("MockUSDT", deployer);
-  const mockUSDTAddress = mockUSDTContract.address;
+  if (config.useMock) {
+    const vrfCoordinator = await ethers.getContract("VRFCoordinatorV2PlusMock", deployer);
+    const token = await ethers.getContract("MockUSDT", deployer);
+    vrfCoordinatorAddress = vrfCoordinator.address;
+    tokenAddress = token.address;
+    subscriptionId = config.subscriptionId;
+  } else {
+    vrfCoordinatorAddress = config.vrfCoordinator;
+    tokenAddress = config.tokenAddress;
+    subscriptionId = process.env[config.subscriptionIdEnv];
+    if (!subscriptionId) {
+      throw new Error(
+        `${config.subscriptionIdEnv} must be set in .env (create subscription at vrf.chain.link)`
+      );
+    }
+  }
 
-  const myContract = await deploy("SlotMachine", {
+  const useNativePayment = config.useNativePayment ?? false;
+
+  const slotMachine = await deploy("SlotMachine", {
     from: deployer,
-    args: [subscriptionId, vrfCoordinatorAddress, keyHash, mockUSDTAddress],
+    args: [subscriptionId, vrfCoordinatorAddress, config.keyHash, tokenAddress, useNativePayment],
     log: true,
-    waitConfirmations: 1,
+    waitConfirmations: config.useMock ? 1 : 2,
   });
 
-  await vrfCoordinatorContract.addConsumer(LOCAL_SUBSCRIPTION_ID, myContract.address);
+  if (config.useMock) {
+    const vrfCoordinator = await ethers.getContract("VRFCoordinatorV2PlusMock", deployer);
+    await vrfCoordinator.addConsumer(subscriptionId, slotMachine.address);
+  }
 
-  console.log("Contract address: ", myContract.address);
+  console.log("SlotMachine deployed at:", slotMachine.address);
+  if (!config.useMock) {
+    console.log("Add as consumer in vrf.chain.link:", slotMachine.address);
+  }
 };
+
 module.exports.tags = ["SlotMachine"];
+// Dependencies only when using mock (file order 00, 11, 22 ensures it)
