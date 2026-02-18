@@ -1,8 +1,6 @@
+/* eslint-disable @typescript-eslint/no-var-requires -- Hardhat test uses CommonJS require */
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
-const { BigNumber } = require("ethers");
-
-const provider = ethers.getDefaultProvider();
 
 describe("Decentralized Slot Machine", async function () {
   let myContract;
