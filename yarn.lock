@@ -1438,10 +1438,12 @@ __metadata:
     "@x402/core": ^2.3.0
     "@x402/evm": ^2.3.0
     "@x402/express": ^2.3.0
+    "@x402/fetch": ^2.3.0
     dotenv: ^16.4.5
     ethers: ^5.7.2
     express: ^4.21.0
     express-rate-limit: ^7.4.0
+    viem: ^2.46.2
   languageName: unknown
   linkType: soft
 
@@ -5718,6 +5720,17 @@ __metadata:
     viem: ^2.43.5
     zod: ^3.24.2
   checksum: 4ad9a8fa5c258d3bf73a90a872b8c2eaf93772865875f8516a9b0a676537abc08aa3a404f7444b82f34b874bb0c9a3d23d2182cc1cf536aef439b2e95dbed9c6
+  languageName: node
+  linkType: hard
+
+"@x402/fetch@npm:^2.3.0":
+  version: 2.3.0
+  resolution: "@x402/fetch@npm:2.3.0"
+  dependencies:
+    "@x402/core": ~2.3.0
+    viem: ^2.39.3
+    zod: ^3.24.2
+  checksum: 39b2bab6bcbf6e3cc9a83131828aa7852fe72149d4e271843e5df374f0025613317a68c8b8830a16ac362171bd67e2b23ff0ad8b4961489d4c997738000e54b0
   languageName: node
   linkType: hard
 
@@ -16775,7 +16788,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:^2.21.26, viem@npm:^2.39.3, viem@npm:^2.43.5":
+"viem@npm:^2.21.26, viem@npm:^2.39.3, viem@npm:^2.43.5, viem@npm:^2.46.2":
   version: 2.46.2
   resolution: "viem@npm:2.46.2"
   dependencies:

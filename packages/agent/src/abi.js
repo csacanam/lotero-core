@@ -1,6 +1,17 @@
 /** Minimal SlotMachineV2 ABI for agent relay */
 export const SlotMachineV2Abi = [
   {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: "requestId", type: "uint256" },
+      { indexed: true, name: "payer", type: "address" },
+      { indexed: true, name: "player", type: "address" },
+      { indexed: false, name: "amount", type: "uint256" },
+    ],
+    name: "SpinRequested",
+    type: "event",
+  },
+  {
     inputs: [
       { name: "player", type: "address" },
       { name: "referringUserAddress", type: "address" },

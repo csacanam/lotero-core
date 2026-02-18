@@ -36,7 +36,7 @@ Edit `.env` and set the **required** variables:
 | `EXECUTOR_PRIVATE_KEY` | Private key of your executor wallet                                   |
 | `PAY_TO`               | Same address as executor (or another wallet to receive x402 payments) |
 | `CDP_API_KEY_ID`       | Required for x402 facilitator. Create at [CDP API Keys](https://portal.cdp.coinbase.com/projects/api-keys) (Secret API Key) |
-| `CDP_API_KEY_SECRET`  | Secret of the CDP API Key (keep private)                              |
+| `CDP_API_KEY_SECRET`   | Secret of the CDP API Key (keep private)                              |
 
 ### 4. Fund the executor wallet
 
@@ -139,13 +139,16 @@ Expected: `bankroll`, `maxBetSafe`, `contractOpen`, etc.
 | `RATE_LIMIT_WINDOW_MS`        | No       | Rate limit window in ms (default: 60000)                                             |
 | `RATE_LIMIT_MAX`              | No       | Max requests per window per IP for read-only endpoints (default: 60)                 |
 | `RATE_LIMIT_NO_PAYMENT_MAX`   | No       | Max requests per window for POST /spinWith1USDC without payment header (default: 10) |
+| `CDP_API_KEY_ID`              | Yes*     | For CDP facilitator. [Create at CDP](https://portal.cdp.coinbase.com/projects/api-keys) |
+| `CDP_API_KEY_SECRET`          | Yes*     | Secret of the CDP API Key                                                           |
+| `PAYER_PRIVATE_KEY`           | No       | For `spin-paid.js`: wallet that pays 1.05 USDC (must have USDC on Base)               |
 
 ## Rate limiting
 
 - **Read-only** endpoints: 60 req/min per IP (configurable).
 - **POST /spinWith1USDC without x402 payment header**: 10 req/min per IP. If under limit, payment middleware returns proper 402 with payment instructions. Avoids saturation from empty requests.
 
-## Pre-spin Validations
+## Pre-spin validations
 
 Before executing a spin, the agent verifies:
 
@@ -153,13 +156,22 @@ Before executing a spin, the agent verifies:
 - Executor has sufficient ETH (≥ `MIN_EXECUTOR_ETH_WEI`) for gas
 - If `VRF_SUBSCRIPTION_ID` is set: subscription has sufficient balance (native or LINK per `useNativePayment`)
 
-## Executor Requirements
+## Executor requirements
 
 - **ETH** on Base for gas
 - **USDC** float: executor spends 1 USDC per spin (transferFrom to contract)
 - **Approval**: SlotMachineV2 must be approved to spend executor's USDC
 
-## Async Model
+## Async model
 
 - `spin` returns `requestId` immediately
 - Result is fetched via `GET /round/:requestId` (VRF is async, do not wait in HTTP)
+
+## Testing scripts
+
+See [scripts/README.md](scripts/README.md) for details.
+
+| Script    | Command               | Description                                                |
+| --------- | --------------------- | ---------------------------------------------------------- |
+| spin:402  | `yarn agent:spin:402`  | POST without payment; expects 402 + PAYMENT-REQUIRED header |
+| spin:paid | `yarn agent:spin:paid`| POST with x402 payment (1.05 USDC). Requires `PAYER_PRIVATE_KEY` in `.env`. |

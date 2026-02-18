@@ -30,7 +30,9 @@
     "vercel": "yarn workspace @se-2/nextjs vercel",
     "vercel:yolo": "yarn workspace @se-2/nextjs vercel:yolo",
     "agent": "yarn workspace @lotero/agent start",
-    "agent:dev": "yarn workspace @lotero/agent dev"
+    "agent:dev": "yarn workspace @lotero/agent dev",
+    "agent:spin:402": "yarn workspace @lotero/agent spin:402",
+    "agent:spin:paid": "yarn workspace @lotero/agent spin:paid"
   },
   "packageManager": "yarn@3.2.3",
   "devDependencies": {

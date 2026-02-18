@@ -175,8 +175,16 @@ app.use(
       "POST /spinWith1USDC": {
         accepts: {
           scheme: "exact",
-          price: `$${SPIN_PRICE_USD}`,
-          network: "eip155:8453", // Base mainnet
+          price: {
+            amount: "1050000",
+            asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            extra: {
+              name: "USD Coin",
+              version: "2",
+              assetTransferMethod: "eip3009",
+            },
+          },
+          network: "eip155:8453",
           payTo: PAY_TO,
         },
         description: "Execute one slot spin (1 USDC bet) for player on Base",
