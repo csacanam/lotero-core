@@ -78,6 +78,7 @@ yarn hardhat verify --network base <CONTRACT_ADDRESS> <SUBSCRIPTION_ID> <VRF_COO
 - `USE_NATIVE_PAYMENT`: `false` (LINK) or `true` (native token)
 
 Example (SlotMachineV2, LINK payment):
+
 ```bash
 yarn hardhat verify --network base 0x... 123 0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634 0x00b81b5a830cb0a4009fbd8904de511e28631e62ce5ad231373d3cdad373ccab 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 false
 ```
@@ -87,7 +88,7 @@ yarn hardhat verify --network base 0x... 123 0xd5D517aBE5cF79B7e95eC98dB0f027778
 ## Reference addresses (Base Mainnet)
 
 | Resource        | Address                                      |
-|-----------------|----------------------------------------------|
+| --------------- | -------------------------------------------- |
 | VRF Coordinator | `0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634` |
 | USDC            | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
 | LINK            | `0x88Fb150BDc53A65fe94Dea0c9BA0a6dAf8C6e196` |
