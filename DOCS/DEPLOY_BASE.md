@@ -14,7 +14,7 @@ Step-by-step guide to deploy Lotero on Base.
 
 ## Step 1: Configure `.env`
 
-In `packages/hardhat/.env`:
+In `packages/contracts/.env`:
 
 ```env
 DEPLOYER_PRIVATE_KEY=0x...          # Your private key (never commit it!)
@@ -43,7 +43,7 @@ BASE_VRF_SUBSCRIPTION_ID=123
 ## Step 3: Deploy
 
 ```bash
-cd packages/hardhat
+cd packages/contracts
 yarn deploy --network base --tags SlotMachine       # Only SlotMachine
 # or
 yarn deploy --network base --tags SlotMachineV2     # Only SlotMachineV2
@@ -51,7 +51,7 @@ yarn deploy --network base --tags SlotMachineV2     # Only SlotMachineV2
 
 Pass `--network` and `--tags` to choose network and which contract(s) to deploy. This skips the mock VRF and MockUSDT used for local tests.
 
-Network configuration is in `packages/hardhat/networks.config.js`. Base uses real VRF, USDC, and requires `BASE_VRF_SUBSCRIPTION_ID` in `.env`.
+Network configuration is in `packages/contracts/networks.config.js`. Base uses real VRF, USDC, and requires `BASE_VRF_SUBSCRIPTION_ID` in `.env`.
 
 ---
 
@@ -72,7 +72,7 @@ Send at least **30 USDC** to the contract address (from MetaMask or any wallet).
 ## Step 6: Verify contracts (optional)
 
 ```bash
-yarn hardhat verify --network base <CONTRACT_ADDRESS> <SUBSCRIPTION_ID> <VRF_COORDINATOR> <KEY_HASH> <USDC_ADDRESS> <USE_NATIVE_PAYMENT>
+yarn verify --network base <CONTRACT_ADDRESS> <SUBSCRIPTION_ID> <VRF_COORDINATOR> <KEY_HASH> <USDC_ADDRESS> <USE_NATIVE_PAYMENT>
 ```
 
 - `USE_NATIVE_PAYMENT`: `false` (LINK) or `true` (native token)
@@ -80,7 +80,7 @@ yarn hardhat verify --network base <CONTRACT_ADDRESS> <SUBSCRIPTION_ID> <VRF_COO
 Example (SlotMachineV2, LINK payment):
 
 ```bash
-yarn hardhat verify --network base 0x... 123 0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634 0x00b81b5a830cb0a4009fbd8904de511e28631e62ce5ad231373d3cdad373ccab 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 false
+yarn verify --network base 0x... 123 0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634 0x00b81b5a830cb0a4009fbd8904de511e28631e62ce5ad231373d3cdad373ccab 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913 false
 ```
 
 ---

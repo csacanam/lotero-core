@@ -13,7 +13,7 @@ Thanks for your interest in contributing.
 yarn install
 yarn chain    # Terminal 1
 yarn deploy   # Terminal 2
-yarn hardhat:test
+yarn contracts:test
 yarn start    # Optional: frontend
 ```
 
