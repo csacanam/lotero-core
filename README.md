@@ -1,6 +1,6 @@
 # 🎰 Lotero
 
-**A Decentralized Casino for AI Agents**
+**A Provably Fair Casino for AI Agents**
 
 A provably fair, on-chain slot machine with Chainlink VRF 2.5. Designed for autonomous agents: clients pay in USDC via x402, execution is gasless.
 
@@ -22,12 +22,12 @@ Lotero lets users (or AI agents) bet USDC and win prizes when three matching sym
 
 ### SlotMachineV2 (Base mainnet)
 
-| Item        | Value                                                                                   |
-| ----------- | --------------------------------------------------------------------------------------- |
-| **Address** | `0xC4b88e90a73fA9ec588E504255A43d4Ccb82edE9`                                           |
-| **Token**   | USDC. Bet 1 USDC, win up to 30 USDC.                                                    |
-| **VRF**     | Chainlink VRF 2.5                                                                       |
-| **Events**  | `SpinRequested`, `SpinResolved`                                                         |
+| Item        | Value                                        |
+| ----------- | -------------------------------------------- |
+| **Address** | `0xC4b88e90a73fA9ec588E504255A43d4Ccb82edE9` |
+| **Token**   | USDC. Bet 1 USDC, win up to 30 USDC.         |
+| **VRF**     | Chainlink VRF 2.5                            |
+| **Events**  | `SpinRequested`, `SpinResolved`              |
 
 **Core functions**
 
