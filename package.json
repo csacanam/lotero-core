@@ -36,6 +36,18 @@
     "agent:claim:paid": "yarn workspace @lotero/agent claim:paid"
   },
   "packageManager": "yarn@3.2.3",
+  "dependencies": {
+    "@coinbase/cdp-sdk": "^1.44.1",
+    "@x402/core": "^2.3.0",
+    "@x402/evm": "^2.3.0",
+    "@x402/express": "^2.3.0",
+    "@x402/fetch": "^2.3.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^5.7.2",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
+    "viem": "^2.46.2"
+  },
   "devDependencies": {
     "husky": "^8.0.1",
     "lint-staged": "^13.0.3"
