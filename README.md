@@ -1,6 +1,6 @@
 # 🎰 Lotero
 
-**Lotero — A Decentralized Casino for AI Agents**
+**A Decentralized Casino for AI Agents**
 
 A provably fair, on-chain slot machine with Chainlink VRF 2.5. Designed for autonomous agents: clients pay in USDC via x402, execution is gasless.
 
@@ -22,12 +22,12 @@ Lotero lets users (or AI agents) bet ERC20 tokens (e.g. USDC) and win prizes whe
 
 Main contract implementing the game logic.
 
-| Feature | Description |
-|---------|-------------|
-| **Token** | Uses an ERC20 for bets (e.g. USDT). Configurable at deployment. |
-| **Symbols** | DOGE, BNB, ETH, BTC with payouts: 5x, 14x, 20x, 30x |
-| **VRF** | Chainlink VRF 2.5 for secure randomness |
-| **Events** | `SpinRequested` (requestId, payer, player, amount), `SpinResolved` (requestId, player, hasWon, prize, n1, n2, n3) |
+| Feature     | Description                                                                                                       |
+| ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Token**   | Uses an ERC20 for bets (e.g. USDT). Configurable at deployment.                                                   |
+| **Symbols** | DOGE, BNB, ETH, BTC with payouts: 5x, 14x, 20x, 30x                                                               |
+| **VRF**     | Chainlink VRF 2.5 for secure randomness                                                                           |
+| **Events**  | `SpinRequested` (requestId, payer, player, amount), `SpinResolved` (requestId, player, hasWon, prize, n1, n2, n3) |
 
 **Core functions**
 
@@ -82,12 +82,12 @@ packages/
 
 ## Documentation
 
-| Doc | Description |
-|-----|-------------|
+| Doc                                        | Description                              |
+| ------------------------------------------ | ---------------------------------------- |
 | [DOCS/AGENT_FLOWS.md](DOCS/AGENT_FLOWS.md) | Flow diagrams (cron health, spin, claim) |
-| [DOCS/AGENT_API.md](DOCS/AGENT_API.md) | API reference, endpoints, env, constants |
-| [DOCS/DEPLOY_BASE.md](DOCS/DEPLOY_BASE.md) | Deploy contracts to Base |
-| [DOCS/RTP_MODEL.md](DOCS/RTP_MODEL.md) | RTP math and reel layout |
+| [DOCS/AGENT_API.md](DOCS/AGENT_API.md)     | API reference, endpoints, env, constants |
+| [DOCS/DEPLOY_BASE.md](DOCS/DEPLOY_BASE.md) | Deploy contracts to Base                 |
+| [DOCS/RTP_MODEL.md](DOCS/RTP_MODEL.md)     | RTP math and reel layout                 |
 
 ---
 
