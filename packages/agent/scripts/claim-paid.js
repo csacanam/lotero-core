@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * POST /claim WITH payment (0.02 USDC via x402).
+ * POST /claim WITH payment (0.5 USDC via x402).
  * Claims earnings for a user. Requires wallet with USDC on Base.
  *
  * Usage: node scripts/claim-paid.js [user] [url]
  *   user: address whose earnings to claim (default: payer address)
  *   url: agent base URL (default: http://localhost:4021)
  *   If only one arg and it starts with http, it's treated as url.
- * Env: PAYER_PRIVATE_KEY (wallet that pays 0.02 USDC)
+ * Env: PAYER_PRIVATE_KEY (wallet that pays 0.5 USDC)
  */
 
 import dotenv from "dotenv";
@@ -36,7 +36,7 @@ const url = `${baseUrl}/claim`;
 async function main() {
   if (!PAYER_PRIVATE_KEY) {
     console.error(
-      "Missing PAYER_PRIVATE_KEY in .env (wallet that pays 0.02 USDC)"
+      "Missing PAYER_PRIVATE_KEY in .env (wallet that pays 0.5 USDC)"
     );
     process.exit(1);
   }

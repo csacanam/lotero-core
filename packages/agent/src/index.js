@@ -15,49 +15,42 @@ import { generateJwt } from "@coinbase/cdp-sdk/auth";
 import { paymentMiddleware, x402ResourceServer } from "@x402/express";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
-import { SlotMachineV2Abi, VRFCoordinatorAbi } from "./abi.js";
+import { SlotMachineV2Abi, VRFCoordinatorAbi } from "./utils/abi.js";
+import constants from "./utils/constants.js";
+import { createCronRouter } from "./routes/cron.js";
 
 // ─── Config ────────────────────────────────────────────────────────────────
-// Required
+// Required env vars (no defaults)
 const SLOT_MACHINE_ADDRESS = process.env.SLOT_MACHINE_ADDRESS;
 const EXECUTOR_PRIVATE_KEY = process.env.EXECUTOR_PRIVATE_KEY;
 const PAY_TO = process.env.PAY_TO;
 
-// Optional with defaults
+// Optional: server & facilitator
 const PORT = process.env.PORT || 4021;
 const BASE_RPC = process.env.BASE_RPC || "https://mainnet.base.org";
 const FACILITATOR_URL =
   process.env.FACILITATOR_URL ||
   "https://api.cdp.coinbase.com/platform/v2/x402";
 
-// Spin pricing
-const SPIN_AMOUNT = ethers.utils.parseUnits("1", 6); // 1 USDC (6 decimals)
-const SPIN_PRICE_USD = "1.05";
+// On-chain spin amount (1 USDC)
+const SPIN_AMOUNT = ethers.utils.parseUnits("1", 6);
 
-// Claim pricing
-const CLAIM_PRICE_USD = "0.02";
-
-// Validation thresholds
-const MIN_EXECUTOR_ETH_WEI = ethers.BigNumber.from(
-  process.env.MIN_EXECUTOR_ETH_WEI || "1000000000000000",
-); // 0.001 ETH
+// Validation: use constants (allow env override for VRF only)
 const VRF_COORDINATOR =
   process.env.VRF_COORDINATOR || "0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634"; // Base mainnet
 const VRF_SUBSCRIPTION_ID = process.env.VRF_SUBSCRIPTION_ID;
-const MIN_SUBSCRIPTION_NATIVE_WEI = ethers.BigNumber.from(
-  process.env.MIN_SUBSCRIPTION_NATIVE_WEI || "1000000000000000",
-); // 0.001 ETH
+const MIN_SUBSCRIPTION_NATIVE_WEI = ethers.utils.parseEther(
+  String(process.env.VRF_MIN_NATIVE_ETH || constants.VRF_MIN_NATIVE_ETH_FOR_SPIN),
+);
 const MIN_SUBSCRIPTION_LINK_JUELS = process.env.MIN_SUBSCRIPTION_LINK_JUELS
   ? ethers.BigNumber.from(process.env.MIN_SUBSCRIPTION_LINK_JUELS)
-  : ethers.utils.parseEther("0.3"); // 0.1 LINK
+  : ethers.utils.parseEther(String(constants.VRF_MIN_LINK_FOR_SPIN));
 
-// Rate limit for read-only endpoints (per IP)
+// Rate limits
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000; // 1 min
-const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX) || 60; // 60 req/min
-
-// Rate limit for paid route when no x402 payment header (avoid facilitator spam)
+const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX) || 60; // read-only: 60 req/min per IP
 const RATE_LIMIT_NO_PAYMENT_MAX =
-  Number(process.env.RATE_LIMIT_NO_PAYMENT_MAX) || 10; // 10 req/min per IP
+  Number(process.env.RATE_LIMIT_NO_PAYMENT_MAX) || 10; // paid route without x402 header: 10 req/min
 
 if (!SLOT_MACHINE_ADDRESS || !EXECUTOR_PRIVATE_KEY || !PAY_TO) {
   console.error(
@@ -85,6 +78,7 @@ const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const ERC20_APPROVE_ABI = [
   "function approve(address spender, uint256 amount) returns (bool)",
   "function allowance(address owner, address spender) view returns (uint256)",
+  "function balanceOf(address owner) view returns (uint256)",
 ];
 
 // ─── x402 ───────────────────────────────────────────────────────────────────
@@ -92,6 +86,11 @@ const CDP_API_KEY_ID = process.env.CDP_API_KEY_ID;
 const CDP_API_KEY_SECRET = process.env.CDP_API_KEY_SECRET;
 const isCdpFacilitator = FACILITATOR_URL.includes("api.cdp.coinbase.com");
 
+/**
+ * Build HTTP facilitator client for x402 payment verification.
+ * Uses CDP JWT auth when facilitator is Coinbase (api.cdp.coinbase.com).
+ * @returns {HTTPFacilitatorClient}
+ */
 function buildFacilitatorClient() {
   const config = { url: FACILITATOR_URL };
 
@@ -151,8 +150,8 @@ const resourceServer = new x402ResourceServer(facilitatorClient).register(
 const app = express();
 app.use(express.json());
 
-// Rate limit for paid route when no x402 payment header (avoid saturation from empty requests)
-// If under limit, pass to payment middleware which returns proper 402 with payment instructions
+// Paid routes without x402 header: apply stricter rate limit to avoid facilitator spam.
+// With header: skip this limit; without: if under limit → next() → paymentMiddleware returns 402 + payment instructions.
 const noPaymentRateLimit = rateLimit({
   windowMs: RATE_LIMIT_WINDOW_MS,
   max: RATE_LIMIT_NO_PAYMENT_MAX,
@@ -161,6 +160,7 @@ const noPaymentRateLimit = rateLimit({
   legacyHeaders: false,
 });
 
+// Apply noPaymentRateLimit only to paid routes that lack x402 payment headers
 app.use((req, res, next) => {
   const paidPaths = ["/spinWith1USDC", "/claim"];
   const isPaidRoute =
@@ -182,7 +182,7 @@ app.use(
         accepts: [
           {
             scheme: "exact",
-            price: "$1.05",
+            price: `$${constants.SPIN_PRICE_USD}`,
             network: "eip155:8453",
             payTo: PAY_TO,
           },
@@ -194,12 +194,12 @@ app.use(
         accepts: [
           {
             scheme: "exact",
-            price: "$0.02",
+            price: `$${constants.CLAIM_PRICE_USD}`,
             network: "eip155:8453",
             payTo: PAY_TO,
           },
         ],
-        description: "Claim player earnings (gasless, 0.02 USDC fee)",
+        description: `Claim player earnings (gasless, ${constants.CLAIM_PRICE_USD} USDC fee)`,
         mimeType: "application/json",
       },
     },
@@ -209,29 +209,74 @@ app.use(
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+/** Shared by spin and claim. Returns { ok, error? } */
+async function validateExecutorEth() {
+  const minEthWei = ethers.utils.parseEther(
+    String(constants.EXECUTOR_MIN_ETH_TRIGGER),
+  );
+  const balance = await provider.getBalance(executorWallet.address);
+  if (balance.lt(minEthWei)) {
+    return {
+      ok: false,
+      error: `Executor ETH too low for gas (need >= ${constants.EXECUTOR_MIN_ETH_TRIGGER} ETH)`,
+    };
+  }
+  return { ok: true };
+}
+
 /**
- * Validations before executing spin
- * - Contract open, bankroll sufficient
- * - Executor has prudent ETH for gas
+ * Validations before executing spin:
+ * - Contract open (isClosed = false)
+ * - Available bankroll (moneyInContract - debt) >= 30 USDC (can pay max prize 30x)
+ * - Executor ETH for gas
+ * - Executor USDC >= 1 (executor pays 1 USDC on behalf of player via playFor)
  * - VRF subscription has sufficient balance (native or LINK per useNativePayment)
  */
 async function validateContractHealth() {
-  const [closed, maxBet, executorEth, useNative] = await Promise.all([
+  const minUsdcForSpin = ethers.utils.parseUnits(
+    String(constants.EXECUTOR_MIN_USDC_FOR_SPIN),
+    6,
+  );
+  const minBankrollUsdc = ethers.utils.parseUnits(
+    String(constants.CONTRACT_MIN_AVAILABLE_BANKROLL_USDC),
+    6,
+  );
+
+  const usdc = new ethers.Contract(
+    USDC_BASE,
+    ERC20_APPROVE_ABI,
+    provider,
+  );
+
+  const [
+    closed,
+    moneyInContract,
+    debt,
+    executorEthCheck,
+    executorUsdcBalance,
+    useNative,
+  ] = await Promise.all([
     slotMachine.isClosed(),
-    slotMachine.getMaxValueToPlay(),
-    provider.getBalance(executorWallet.address),
+    slotMachine.getMoneyInContract(),
+    slotMachine.getCurrentDebt(),
+    validateExecutorEth(),
+    usdc.balanceOf(executorWallet.address),
     slotMachine.useNativePayment(),
   ]);
 
+  const availableBankroll = moneyInContract.sub(debt);
   const errors = [];
+
   if (closed) errors.push("Contract is closed");
-  if (maxBet.lt(SPIN_AMOUNT))
-    errors.push("Bankroll insufficient for max payout");
-  if (executorEth.lt(MIN_EXECUTOR_ETH_WEI)) {
+  if (availableBankroll.lt(minBankrollUsdc))
     errors.push(
-      `Executor ETH too low for gas (need >= ${ethers.utils.formatEther(MIN_EXECUTOR_ETH_WEI)} ETH)`,
+      `Available bankroll too low (need >= ${constants.CONTRACT_MIN_AVAILABLE_BANKROLL_USDC} USDC to pay max prize)`,
     );
-  }
+  if (!executorEthCheck.ok) errors.push(executorEthCheck.error);
+  if (executorUsdcBalance.lt(minUsdcForSpin))
+    errors.push(
+      `Executor USDC too low (need >= ${constants.EXECUTOR_MIN_USDC_FOR_SPIN} USDC to execute spin)`,
+    );
 
   // VRF subscription balance (if subscription ID configured)
   if (VRF_SUBSCRIPTION_ID) {
@@ -241,13 +286,13 @@ async function validateContractHealth() {
       if (useNative) {
         if (nativeBalance.lt(MIN_SUBSCRIPTION_NATIVE_WEI)) {
           errors.push(
-            `VRF subscription native balance too low (need >= ${ethers.utils.formatEther(MIN_SUBSCRIPTION_NATIVE_WEI)} ETH)`,
+            `VRF subscription native balance too low (need >= ${constants.VRF_MIN_NATIVE_ETH_FOR_SPIN} ETH)`,
           );
         }
       } else {
         if (linkBalance.lt(MIN_SUBSCRIPTION_LINK_JUELS)) {
           errors.push(
-            `VRF subscription LINK balance too low (need >= ${ethers.utils.formatEther(MIN_SUBSCRIPTION_LINK_JUELS)} LINK)`,
+            `VRF subscription LINK balance too low (need >= ${constants.VRF_MIN_LINK_FOR_SPIN} LINK)`,
           );
         }
       }
@@ -347,6 +392,14 @@ app.post("/claim", async (req, res) => {
       });
     }
 
+    const executorCheck = await validateExecutorEth();
+    if (!executorCheck.ok) {
+      return res.status(503).json({
+        error: "Executor insufficient",
+        details: [executorCheck.error],
+      });
+    }
+
     const tx = await slotMachine.claimPlayerEarnings(user, {
       gasLimit: 150000,
     });
@@ -380,24 +433,38 @@ const readOnlyRateLimit = rateLimit({
   legacyHeaders: false,
 });
 
-/** GET / (service info) */
+// Cron / monitoring (external agent hits this to verify system state)
+const cronRouter = createCronRouter({
+  slotMachine,
+  vrfCoordinator,
+  executorWallet,
+  provider,
+  slotMachineAddress: SLOT_MACHINE_ADDRESS,
+  payTo: PAY_TO,
+  usdcAddress: USDC_BASE,
+  vrfSubscriptionId: VRF_SUBSCRIPTION_ID,
+});
+app.use("/cron", readOnlyRateLimit, cronRouter);
+
+/** GET / – Service info and endpoint list */
 app.get("/", readOnlyRateLimit, (_req, res) => {
   res.json({
     name: "Lotero Agent (Base)",
     description:
       "Execute provably fair slot spins on Base using Chainlink VRF. Gasless for caller via x402 payment in USDC.",
     endpoints: {
-      "POST /spinWith1USDC": "Paid (1.05 USDC). Execute spin for player.",
-      "POST /claim": "Paid (0.02 USDC). Claim player earnings (gasless).",
+      "POST /spinWith1USDC": `Paid (${constants.SPIN_PRICE_USD} USDC). Execute spin for player.`,
+      "POST /claim": `Paid (${constants.CLAIM_PRICE_USD} USDC). Claim player earnings (gasless).`,
       "GET /round/:requestId": "Get round result by requestId.",
       "GET /player/:address/balances":
         "Get player balances and referral stats.",
       "GET /contract/health": "Contract bankroll, max bet, open/closed.",
+      "GET /cron/health": "System health for external cron/monitoring agent (read-only).",
     },
   });
 });
 
-/** GET /round/:requestId */
+/** GET /round/:requestId – Round result (numbers, prize, resolved) by VRF requestId */
 app.get("/round/:requestId", readOnlyRateLimit, async (req, res) => {
   try {
     const requestId = req.params.requestId;
@@ -422,7 +489,7 @@ app.get("/round/:requestId", readOnlyRateLimit, async (req, res) => {
   }
 });
 
-/** GET /player/:address/balances */
+/** GET /player/:address/balances – Player balances (moneyAdded, earned, claimed, referrals) */
 app.get("/player/:address/balances", readOnlyRateLimit, async (req, res) => {
   try {
     const addr = req.params.address;
@@ -443,9 +510,12 @@ app.get("/player/:address/balances", readOnlyRateLimit, async (req, res) => {
   }
 });
 
-/** GET /contract/health */
+/** GET /contract/health – Bankroll, max bet, open/closed, executor ETH, VRF subscription */
 app.get("/contract/health", readOnlyRateLimit, async (_req, res) => {
   try {
+    const minEthWei = ethers.utils.parseEther(
+      String(constants.EXECUTOR_MIN_ETH_TRIGGER),
+    );
     const [moneyInContract, maxBet, closed, useNative] = await Promise.all([
       slotMachine.getMoneyInContract(),
       slotMachine.getMaxValueToPlay(),
@@ -459,7 +529,7 @@ app.get("/contract/health", readOnlyRateLimit, async (_req, res) => {
       maxBetSafe: maxBet.toString(),
       contractOpen: !closed,
       executorEthBalance: executorEth.toString(),
-      executorEthSufficient: executorEth.gte(MIN_EXECUTOR_ETH_WEI),
+      executorEthSufficient: executorEth.gte(minEthWei),
       useNativePayment: useNative,
     };
 
@@ -487,6 +557,10 @@ app.get("/contract/health", readOnlyRateLimit, async (_req, res) => {
 
 // ─── Startup: ensure USDC approval, then listen ──────────────────────────────
 
+/**
+ * Ensures executor wallet has unlimited USDC approval for SlotMachine.
+ * Approves max uint256 if allowance is zero; no-op otherwise.
+ */
 async function ensureUsdcApproval() {
   const usdc = new ethers.Contract(
     USDC_BASE,
@@ -510,6 +584,7 @@ async function ensureUsdcApproval() {
   console.log("[startup] USDC approved. Tx:", tx.hash);
 }
 
+/** Ensures USDC approval, then starts Express server on PORT. */
 async function start() {
   await ensureUsdcApproval();
   app.listen(PORT, () => {

@@ -1,5 +1,16 @@
-/** Minimal SlotMachineV2 ABI for agent relay */
+/**
+ * Minimal ABIs for Lotero Agent.
+ *
+ * Contains only the functions and events required by the agent for:
+ * - Spin/play operations (playFor, getRoundInfo, isResolved)
+ * - Claim operations (claimPlayerEarnings)
+ * - Cron/monitoring (getMoneyInContract, getCurrentDebt, isClosed, useNativePayment)
+ * - Auto top-up (depositTokens, totalMoneyEarnedByDevs, totalMoneyClaimedByDevs, claimDevEarnings)
+ */
+
+/** SlotMachineV2 contract – spin, claim, and funding operations */
 export const SlotMachineV2Abi = [
+  // ─── Events ─────────────────────────────────────────────────────────────
   {
     anonymous: false,
     inputs: [
@@ -11,6 +22,8 @@ export const SlotMachineV2Abi = [
     name: "SpinRequested",
     type: "event",
   },
+
+  // ─── Spin / play ────────────────────────────────────────────────────────
   {
     inputs: [
       { name: "player", type: "address" },
@@ -50,6 +63,8 @@ export const SlotMachineV2Abi = [
     stateMutability: "view",
     type: "function",
   },
+
+  // ─── User / claim ───────────────────────────────────────────────────────
   {
     inputs: [{ name: "", type: "address" }],
     name: "infoPerUser",
@@ -66,8 +81,24 @@ export const SlotMachineV2Abi = [
     type: "function",
   },
   {
+    inputs: [{ name: "userAddress", type: "address" }],
+    name: "claimPlayerEarnings",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+
+  // ─── Contract state (bankroll, debt, closed) ─────────────────────────────
+  {
     inputs: [],
     name: "getMoneyInContract",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getCurrentDebt",
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
@@ -87,22 +118,53 @@ export const SlotMachineV2Abi = [
     type: "function",
   },
   {
-    inputs: [{ name: "userAddress", type: "address" }],
-    name: "claimPlayerEarnings",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
     inputs: [],
     name: "useNativePayment",
     outputs: [{ name: "", type: "bool" }],
     stateMutability: "view",
     type: "function",
   },
+
+  // ─── Funding / top-up (cron auto top-up) ─────────────────────────────────
+  {
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    name: "depositTokens",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+
+  // ─── Dev fees (cron dev claim) ──────────────────────────────────────────
+  {
+    inputs: [],
+    name: "totalMoneyEarnedByDevs",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalMoneyClaimedByDevs",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "claimDevEarnings",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
 ];
 
-/** VRF Coordinator V2 Plus - getSubscription only */
+/**
+ * VRF Coordinator V2 Plus – subscription balance check.
+ * Used by cron to monitor VRF LINK (or native) balance and send alerts when low.
+ */
 export const VRFCoordinatorAbi = [
   {
     inputs: [{ name: "_subId", type: "uint256" }],

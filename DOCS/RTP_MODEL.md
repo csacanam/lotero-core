@@ -30,6 +30,25 @@ Each reel has 10 positions with the same distribution:
 
 Reels are independent. The VRF returns 3 random indices (0–9), one per reel, which map to the symbol at that position.
 
+## Reel layout (index → symbol)
+
+The VRF returns 3 indices (0–9), one per reel. Each index maps to a symbol at that position:
+
+| Index | Symbol |
+|-------|--------|
+| 0     | DOGE   |
+| 1     | DOGE   |
+| 2     | DOGE   |
+| 3     | DOGE   |
+| 4     | DOGE   |
+| 5     | BNB    |
+| 6     | BNB    |
+| 7     | ETH    |
+| 8     | ETH    |
+| 9     | BTC    |
+
+**Example:** `number1: 5, number2: 6, number3: 6` → BNB, BNB, BNB (14× payout).
+
 ---
 
 ## RTP calculation

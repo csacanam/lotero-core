@@ -63,7 +63,7 @@ Add `PAYER_PRIVATE_KEY` to `packages/agent/.env` (not in .env.example, which is 
 
 ### claim-paid
 
-Sends a POST **with** x402 payment (0.02 USDC). Claims earnings for a user (gasless).
+Sends a POST **with** x402 payment (0.5 USDC). Claims earnings for a user (gasless).
 
 ```bash
 yarn agent:claim:paid
@@ -80,7 +80,7 @@ yarn workspace @lotero/agent claim:paid [user] [url]
 | user | Payer address            | Address whose earnings to claim     |
 | url  | `http://localhost:4021` | Agent base URL                     |
 
-**Environment variables:** same as spin-paid (payer needs 0.02+ USDC on Base).
+**Environment variables:** same as spin-paid (payer needs 0.5+ USDC on Base).
 
 ## Example flow
 
