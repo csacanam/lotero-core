@@ -384,6 +384,7 @@ ${walletAddress}
               }
             } catch (err) {
               console.error("[cron] Auto top-up failed:", err.message);
+              didTransferToContract = true; // prevent step 6 from retrying and duplicating alerts
               alertCritical.push({
                 key: "auto_topup_error",
                 msg: `<b>❌ AUTO TOP-UP FAILED</b>
@@ -543,6 +544,7 @@ Status:
           });
         } catch (err) {
           console.error("[cron] Wallet excess top-up failed:", err.message);
+          didTransferToContract = true; // prevent duplicate retries in same run
           alertCritical.push({
             key: "auto_topup_error",
             msg: `<b>❌ AUTO TOP-UP FAILED</b>
