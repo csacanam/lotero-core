@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "NODE_PATH=../.. node src/index.js",
+    "start": "cd ../.. && node packages/agent/src/index.js",
     "dev": "node --watch src/index.js",
     "spin:402": "node scripts/spin-402.js",
     "spin:paid": "node scripts/spin-paid.js",
