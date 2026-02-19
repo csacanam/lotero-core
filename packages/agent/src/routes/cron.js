@@ -3,16 +3,16 @@
  *
  * GET /cron/health returns full system status (wallet, contract, VRF) and
  * may execute autonomous actions:
- * - Transfer USDC from wallet to contract when contract needs funding or is below target
+ * - Transfer USDC from wallet to contract when contract needs funding or is below target (max 1 per run)
  * - Claim dev fees to wallet when pending >= 5 USDC
  * - Send Telegram alerts (critical, warning, info) when thresholds are breached
  *
  * Execution order:
  * 1. Fetch wallet (ETH, USDC) and contract (bankroll, isClosed) state
  * 2. Build passive alerts (ETH low, USDC buffer low)
- * 3. Contract needs funding (closed or bankroll < 60): transfer capped at target
+ * 3. Contract needs funding (closed or bankroll < 60): if excess >= 5, transfer capped at target
  * 4. Dev claim: withdraw pending dev fees to wallet when >= 5 USDC
- * 5. Wallet excess → contract: when bankroll < 90 and excess >= 5, transfer min(excess, needed)
+ * 5. Wallet excess → contract: when bankroll < 90 and excess >= 5, only if step 3 did not transfer
  * 6. Fetch VRF subscription, build VRF LINK low alert if applicable
  * 7. Send all alerts in order: critical → warning → info
  */

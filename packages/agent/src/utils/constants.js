@@ -55,9 +55,9 @@ export const WALLET_MIN_USDC_BUFFER = 10.0;
 /** Target USDC buffer for executor wallet (used in alert messages) */
 export const WALLET_TARGET_USDC_BUFFER = 20.0;
 
-// ─── Wallet → Contract (cron reinforcement) ─────────────────────────────────
+// ─── Wallet → Contract (cron steps 3 & 5) ─────────────────────────────────────
 
-/** Min excess (wallet - min buffer) required to transfer to contract when bankroll < target */
+/** Min excess (wallet - min buffer) required for any transfer to contract. Applies to both "contract needs funding" and "wallet excess reinforcement". */
 export const WALLET_EXCESS_MIN_FOR_CONTRACT_USDC = 5.0;
 
 // ─── VRF subscription – spin validation ──────────────────────────────────────

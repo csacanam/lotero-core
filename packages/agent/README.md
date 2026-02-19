@@ -87,9 +87,9 @@ The **Ops Agent** is an external process (cron job, GitHub Action, etc.) that pe
 
 1. Fetches wallet (ETH, USDC) and contract (bankroll, debt, isClosed) state
 2. Builds passive alerts (ETH low → CRITICAL, USDC buffer low → INFO)
-3. **Auto top-up (contract needs funding)**: If contract is closed or bankroll &lt; 60 USDC, transfers USDC from wallet to contract (capped at 90 USDC)
+3. **Auto top-up (contract needs funding)**: If contract is closed or bankroll &lt; 60 USDC, and wallet excess ≥ 5 USDC, transfers USDC to contract (capped at 90). At most one transfer per run.
 4. **Dev claim**: If pending dev fees ≥ 5 USDC, claims to wallet
-5. **Wallet excess → contract**: If bankroll &lt; 90 USDC and wallet has excess (above 10 USDC buffer), transfers `min(excess, needed)`
+5. **Wallet excess → contract**: If bankroll &lt; 90 USDC, wallet excess ≥ 5 USDC, and step 3 did not transfer, transfers `min(excess, needed)`
 6. Fetches VRF subscription, builds VRF LINK low alert (WARNING)
 7. Sends all Telegram alerts in order: critical → warning → info
 
@@ -447,8 +447,9 @@ Thresholds for validation and cron logic. Modify there to change triggers:
 | `CONTRACT_MIN_AVAILABLE_BANKROLL_USDC` | 30 | Min bankroll to allow spins (pay max prize) |
 | `EXECUTOR_MIN_USDC_FOR_SPIN` | 1 | Min USDC in executor to execute a spin |
 | `EXECUTOR_MIN_ETH_TRIGGER` | 0.001 | Min ETH for gas (spin/claim validation) |
-| `CONTRACT_TOPUP_TRIGGER_BANKROLL_USDC` | 60 | Bankroll below → cron auto top-up |
+| `CONTRACT_TOPUP_TRIGGER_BANKROLL_USDC` | 60 | Bankroll below → cron auto top-up (step 3) |
 | `CONTRACT_TARGET_BANKROLL_USDC` | 90 | Target bankroll, transfers capped at this |
+| `WALLET_EXCESS_MIN_FOR_CONTRACT_USDC` | 5 | Min wallet excess for any transfer to contract (steps 3 & 5) |
 | `DEV_CLAIM_MIN_USDC` | 5 | Cron claims dev fees when pending ≥ this |
 | `WALLET_MIN_ETH_TRIGGER` | 0.01 | ETH below → Telegram CRITICAL |
 | `WALLET_MIN_USDC_BUFFER` | 10 | USDC below → Telegram INFO; min to keep when topping up |
