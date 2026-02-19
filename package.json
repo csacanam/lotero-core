@@ -25,7 +25,6 @@
     "frontend:lint": "yarn workspace @se-2/frontend lint",
     "frontend:format": "yarn workspace @se-2/frontend format",
     "frontend:check-types": "yarn workspace @se-2/frontend check-types",
-    "postinstall": "husky install || true",
     "precommit": "lint-staged",
     "vercel": "yarn workspace @se-2/frontend vercel",
     "vercel:yolo": "yarn workspace @se-2/frontend vercel:yolo",
