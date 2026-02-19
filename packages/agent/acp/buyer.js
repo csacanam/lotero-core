@@ -209,7 +209,21 @@ export async function runAcpBuyer() {
     return;
   }
 
-  const offering = chosenAgent.jobOfferings[0];
+  const offeringForSpin = chosenAgent.jobOfferings.find((o) =>
+    /spin/i.test(o.name || "")
+  );
+  const offeringForClaim = chosenAgent.jobOfferings.find((o) =>
+    /claim/i.test(o.name || "")
+  );
+  const offering = action === "spin" ? offeringForSpin : offeringForClaim;
+
+  if (!offering) {
+    console.error(
+      `[acp-buyer] No ${action} offering found. Available: ${chosenAgent.jobOfferings.map((o) => o.name).join(", ")}`
+    );
+    process.exit(1);
+  }
+
   const requirement =
     action === "spin"
       ? { player: addr, referral: referral ?? undefined }

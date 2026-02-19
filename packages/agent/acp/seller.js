@@ -41,6 +41,9 @@ const WHITELISTED_WALLET_PRIVATE_KEY =
   process.env.ACP_WHITELISTED_WALLET_PRIVATE_KEY; // legacy
 const SELLER_ENTITY_ID = process.env.ACP_SELLER_ENTITY_ID;
 const SELLER_AGENT_WALLET_ADDRESS = process.env.ACP_SELLER_AGENT_WALLET_ADDRESS;
+// ACP prices (higher than x402 to offset Virtuals platform fee). Only used for ACP.
+const ACP_SPIN_PRICE = process.env.ACP_SPIN_PRICE_USD || "1.375";
+const ACP_CLAIM_PRICE = process.env.ACP_CLAIM_PRICE_USD || "0.625";
 
 const SPIN_AMOUNT = ethers.utils.parseUnits("1", 6);
 const MIN_SUBSCRIPTION_NATIVE_WEI = ethers.utils.parseEther(
@@ -174,7 +177,7 @@ export async function startAcpSeller() {
         }
 
         await job.accept("Lotero slot machine service");
-        const price = isSpin ? "1.05" : "0.5";
+        const price = isSpin ? ACP_SPIN_PRICE : ACP_CLAIM_PRICE;
         await job.createRequirement(`Pay ${price} USDC to proceed`);
         console.log(`[acp-seller] Job ${job.id} accepted`);
       } else if (

@@ -28,10 +28,14 @@ yarn workspace @lotero/agent acp:seller
 
 ## Job schema
 
-When creating Job Offerings in the ACP UI:
+When creating Job Offerings in the ACP UI (app.virtuals.io):
 
-- **Spin**: `{ "player": "0x...", "referral": "0x..." | null }` – 1.05 USDC
-- **Claim**: `{ "user": "0x..." }` – 0.5 USDC
+- **Spin**: `{ "player": "0x...", "referral": "0x..." | null }` – 1.375 USDC
+- **Claim**: `{ "user": "0x..." }` – 0.625 USDC
+
+Prices are higher than x402 to offset Virtuals platform fee. Override via `ACP_SPIN_PRICE_USD` and `ACP_CLAIM_PRICE_USD` in `.env`.
+
+**Important:** Update the job offering prices in the ACP portal (app.virtuals.io) to 1.375 and 0.625 so the buyer is charged correctly.
 
 ## See also
 

@@ -394,16 +394,22 @@ app.get("/contract/health", readOnlyRateLimit, async (_req, res) => {
     const minEthWei = ethers.utils.parseEther(
       String(constants.EXECUTOR_MIN_ETH_TRIGGER),
     );
-    const [moneyInContract, maxBet, closed, useNative] = await Promise.all([
-      slotMachine.getMoneyInContract(),
-      slotMachine.getMaxValueToPlay(),
-      slotMachine.isClosed(),
-      slotMachine.useNativePayment(),
-    ]);
+    const [moneyInContract, currentDebt, maxBet, closed, useNative] =
+      await Promise.all([
+        slotMachine.getMoneyInContract(),
+        slotMachine.getCurrentDebt(),
+        slotMachine.getMaxValueToPlay(),
+        slotMachine.isClosed(),
+        slotMachine.useNativePayment(),
+      ]);
     const executorEth = await provider.getBalance(executorWallet.address);
 
+    const bankroll = moneyInContract.sub(currentDebt);
+
     const health = {
-      bankroll: moneyInContract.toString(),
+      moneyInContract: moneyInContract.toString(),
+      currentDebt: currentDebt.toString(),
+      bankroll: bankroll.toString(),
       maxBetSafe: maxBet.toString(),
       contractOpen: !closed,
       executorEthBalance: executorEth.toString(),
