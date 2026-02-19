@@ -179,6 +179,9 @@ export function createCronRouter(deps) {
       const alertWarning = [];
       const alertInfo = [];
 
+      /** Set to true when we transfer to contract in step 4; prevents step 6 from transferring again this run */
+      let didTransferToContract = false;
+
       // ═══════════════════════════════════════════════════════════════════
       // 2. PASSIVE ALERTS (no on-chain actions)
       // ═══════════════════════════════════════════════════════════════════
@@ -265,25 +268,27 @@ ${walletAddress}
           const contractNeeded =
             constants.CONTRACT_TARGET_BANKROLL_USDC - bankrollUSDC;
           const totalNeeded = walletNeeded + contractNeeded;
+
+          const contractStatus = isClosed
+            ? `Contract is CLOSED (bankroll ${bankrollUSDC.toFixed(1)} USDC, min to open: ${constants.CONTRACT_MIN_AVAILABLE_BANKROLL_USDC} USDC).`
+            : `Contract is OPEN (bankroll ${bankrollUSDC.toFixed(1)} USDC).`;
+
           alertCritical.push({
             key: "contract_wallet_critical",
-            msg: `<b>🚨 CRITICAL: Contract Requires Funding – Wallet Below Minimum Buffer</b>
+            msg: `<b>🚨 CRITICAL: Wallet Below Minimum Buffer</b>
 
-Current contract bankroll: ${bankrollUSDC.toFixed(1)} USDC
-Target bankroll: ${constants.CONTRACT_TARGET_BANKROLL_USDC} USDC
+${contractStatus}
 
 Current wallet USDC: ${usdcBalance.toFixed(1)} USDC
 Minimum wallet buffer: ${constants.WALLET_MIN_USDC_BUFFER} USDC
 
-The wallet does not have sufficient liquidity to safely refill the contract.
+The wallet cannot execute spins or auto top-up until funded.
 
 <b>Action required:</b>
-Send USDC to the Executor wallet:
+Send <b>at least ${walletNeeded.toFixed(1)} USDC</b> to the Executor wallet:
 ${walletAddress}
 
-<b>Mandatory top-up:</b> ${totalNeeded.toFixed(1)} USDC
-For wallet: ${walletNeeded.toFixed(1)} USDC
-For contract: ${Math.max(0, contractNeeded).toFixed(1)} USDC.`,
+(This restores the minimum buffer. To also fill the contract to target ${constants.CONTRACT_TARGET_BANKROLL_USDC} USDC, send ${totalNeeded.toFixed(1)} USDC total.)`,
           });
         } else {
           const excess = usdcBalance - constants.WALLET_MIN_USDC_BUFFER;
@@ -291,7 +296,10 @@ For contract: ${Math.max(0, contractNeeded).toFixed(1)} USDC.`,
             constants.CONTRACT_TARGET_BANKROLL_USDC - bankrollUSDC;
           const amountToSend = Math.min(excess, neededToTarget);
 
-          if (amountToSend > 0) {
+          if (
+            amountToSend >= constants.WALLET_EXCESS_MIN_FOR_CONTRACT_USDC &&
+            amountToSend > 0
+          ) {
             const stillNeeded = Math.max(
               0,
               constants.CONTRACT_TARGET_BANKROLL_USDC - (bankrollUSDC + amountToSend)
@@ -319,6 +327,7 @@ Sending wallet USDC above buffer to contract.
               const bankrollBefore = bankrollUSDC;
 
               await transferUsdcToContract(ctx, walletAddress, amountToSend);
+              didTransferToContract = true;
 
               const after = await fetchStateAfterTransfer(ctx, walletAddress);
               bankrollUSDC = after.bankrollUSDC;
@@ -386,7 +395,40 @@ ${walletAddress}
 If this persists, top up ETH for gas and retry.`,
               });
             }
+          } else if (isClosed) {
+            // Contract CLOSED, insufficient excess to transfer. Critical: user must add funds to open.
+            const excess = usdcBalance - constants.WALLET_MIN_USDC_BUFFER;
+            const neededToOpen = Math.max(
+              0,
+              constants.CONTRACT_MIN_AVAILABLE_BANKROLL_USDC - bankrollUSDC
+            );
+            const minExcessForNextCycle = Math.max(
+              constants.WALLET_EXCESS_MIN_FOR_CONTRACT_USDC,
+              neededToOpen
+            );
+            const amountToSendToWallet = Math.max(
+              0,
+              minExcessForNextCycle - excess
+            );
+            alertCritical.push({
+              key: "contract_insufficient_excess",
+              msg: `<b>🚨 CRITICAL: Contract Closed – Insufficient Wallet Excess</b>
+
+Contract bankroll: ${bankrollUSDC.toFixed(1)} USDC
+Min to open: ${constants.CONTRACT_MIN_AVAILABLE_BANKROLL_USDC} USDC
+
+Wallet USDC: ${usdcBalance.toFixed(1)} USDC
+Current excess (above buffer): ${excess.toFixed(1)} USDC
+Min excess to auto top-up: ${constants.WALLET_EXCESS_MIN_FOR_CONTRACT_USDC} USDC
+
+Contract is CLOSED. Auto top-up skipped: insufficient excess.
+
+<b>Action required:</b>
+Send <b>${amountToSendToWallet.toFixed(1)} USDC</b> to the Executor wallet so the next cron can open the contract:
+${walletAddress}`,
+            });
           }
+          // When contract is OPEN but excess < 5: no alert. Auto top-up will run when excess arrives.
         }
       }
 
@@ -447,6 +489,7 @@ Dev fees were claimed and sent to the Executor wallet.
       const excessUSDC = usdcBalance - constants.WALLET_MIN_USDC_BUFFER;
 
       if (
+        !didTransferToContract &&
         bankrollBelowTarget &&
         excessUSDC >= constants.WALLET_EXCESS_MIN_FOR_CONTRACT_USDC
       ) {
@@ -469,6 +512,7 @@ Contract bankroll below target. Sending excess wallet USDC to contract.
           const bankrollBeforeReinforce = bankrollUSDC;
 
           await transferUsdcToContract(ctx, walletAddress, amountToSend);
+          didTransferToContract = true;
 
           const after = await fetchStateAfterTransfer(ctx, walletAddress);
           bankrollUSDC = after.bankrollUSDC;
