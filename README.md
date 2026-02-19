@@ -1,10 +1,12 @@
 # 🎰 Lotero
 
-A decentralized slot machine with verifiable randomness and on-chain rewards.
+**Lotero — A Decentralized Casino for AI Agents**
+
+A provably fair, on-chain slot machine with Chainlink VRF 2.5. Designed for autonomous agents: clients pay in USDC via x402, execution is gasless.
 
 ## Overview
 
-Lotero lets users bet ERC20 tokens (e.g. USDT) and win prizes when three matching symbols appear on the reels. The game uses **Chainlink VRF 2.5** for provably fair randomness and is designed to be integrated by frontends or third-party apps.
+Lotero lets users (or AI agents) bet ERC20 tokens (e.g. USDC) and win prizes when three matching symbols appear on the reels. The game uses **Chainlink VRF 2.5** for provably fair randomness and is designed to be integrated by frontends or third-party apps.
 
 - **RTP ~93%** — Mathematical model in [DOCS/RTP_MODEL.md](DOCS/RTP_MODEL.md) and [rtp_model.xlsx](DOCS/rtp_model.xlsx)
 - **Referral system** — 1% commission on referred players' bets
@@ -44,15 +46,19 @@ Useful for meta-transactions, sponsored plays, or gifting spins.
 
 ### Lotero Agent
 
-Stateless HTTP API that sells spins as a service. Pays 1.05 USDC via x402 and relays `playFor` onchain. See [packages/agent/README.md](packages/agent/README.md).
+Stateless HTTP API that sells spins and claims as a service. Clients pay via x402 (1.05 USDC spin, 0.5 USDC claim); the agent relays `playFor` and `claimPlayerEarnings` onchain. Two-agent system: **Lotero Agent** (Express API) + **Ops Agent** (external cron calling `GET /cron/health` for monitoring and auto top-up). See [packages/agent/README.md](packages/agent/README.md).
 
-- `POST /spinWith1USDC` — Paid endpoint (x402). Execute spin for `player`.
+- `POST /spinWith1USDC` — Paid (x402). Execute spin for `player`.
+- `POST /claim` — Paid (x402). Claim player earnings (gasless).
 - `GET /round/:requestId`, `GET /player/:address/balances`, `GET /contract/health` — Read-only.
+- `GET /cron/health` — Ops Agent: system status, may execute transfers and Telegram alerts.
 
 ```bash
 yarn agent        # Start agent
 yarn agent:dev    # Dev with watch
 ```
+
+**Documentation:** [DOCS/AGENT_FLOWS.md](DOCS/AGENT_FLOWS.md) (flow diagrams) | [DOCS/AGENT_API.md](DOCS/AGENT_API.md) (API reference)
 
 ---
 
@@ -71,6 +77,17 @@ packages/
 │   └── test/
 └── nextjs/           # Web app (in development)
 ```
+
+---
+
+## Documentation
+
+| Doc | Description |
+|-----|-------------|
+| [DOCS/AGENT_FLOWS.md](DOCS/AGENT_FLOWS.md) | Flow diagrams (cron health, spin, claim) |
+| [DOCS/AGENT_API.md](DOCS/AGENT_API.md) | API reference, endpoints, env, constants |
+| [DOCS/DEPLOY_BASE.md](DOCS/DEPLOY_BASE.md) | Deploy contracts to Base |
+| [DOCS/RTP_MODEL.md](DOCS/RTP_MODEL.md) | RTP math and reel layout |
 
 ---
 
