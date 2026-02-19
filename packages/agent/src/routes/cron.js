@@ -35,9 +35,11 @@ const ERC20_APPROVE_ABI = [
 const USDC_DECIMALS = 6;
 const LINK_DECIMALS = 18;
 
-/** Parse USDC amount to raw (6 decimals) */
+/** Parse USDC amount to raw (6 decimals). Rounds to 6 decimals to avoid floating-point → parseUnits "fractional component exceeds decimals" errors. */
 function parseUsdc(amount) {
-  return ethers.utils.parseUnits(String(amount), USDC_DECIMALS);
+  const num = typeof amount === "number" ? amount : parseFloat(String(amount));
+  const rounded = Math.floor(num * 1e6) / 1e6;
+  return ethers.utils.parseUnits(rounded.toFixed(6), USDC_DECIMALS);
 }
 
 /** Format USDC from raw (6 decimals) */

@@ -1,0 +1,26 @@
+diff --git a/dist/index.js b/dist/index.js
+index f73c8835e2b9fa3d5312d357dc906c0b8829cdfa..c0cd35dd7c2ff3032e558b74a04df2ed3e83662a 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -4129,7 +4129,7 @@ var AcpJobOffering = class {
+     this.slaMinutes = slaMinutes;
+     this.requirement = requirement;
+     this.deliverable = deliverable;
+-    this.ajv = new import_ajv.default({ allErrors: true });
++    this.ajv = new import_ajv.default({ allErrors: true }); this.ajv.addFormat("address", /^0x[a-fA-F0-9]{40}$/);
+   }
+   async initiateJob(serviceRequirement, evaluatorAddress) {
+     const expiredAt = new Date(Date.now() + this.slaMinutes * 60 * 1e3);
+diff --git a/dist/index.mjs b/dist/index.mjs
+index cc5a51015230d7079e9de64c85c918acf1170c25..eebfb3dbae23237dc0741cf1d2d5ef17c15b6872 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -4106,7 +4106,7 @@ var AcpJobOffering = class {
+     this.slaMinutes = slaMinutes;
+     this.requirement = requirement;
+     this.deliverable = deliverable;
+-    this.ajv = new Ajv({ allErrors: true });
++    this.ajv = new Ajv({ allErrors: true }); this.ajv.addFormat("address", /^0x[a-fA-F0-9]{40}$/);
+   }
+   async initiateJob(serviceRequirement, evaluatorAddress) {
+     const expiredAt = new Date(Date.now() + this.slaMinutes * 60 * 1e3);

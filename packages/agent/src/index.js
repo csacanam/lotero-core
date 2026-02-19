@@ -7,7 +7,12 @@
  * Stateless, no DB, relay + monetization + onchain execution only.
  */
 
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { ethers } from "ethers";
@@ -18,6 +23,8 @@ import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { SlotMachineV2Abi, VRFCoordinatorAbi } from "./utils/abi.js";
 import constants from "./utils/constants.js";
 import { createCronRouter } from "./routes/cron.js";
+import { executeSpin } from "./services/spin.js";
+import { executeClaim } from "./services/claim.js";
 
 // ─── Config ────────────────────────────────────────────────────────────────
 // Required env vars (no defaults)
@@ -207,219 +214,90 @@ app.use(
   ),
 );
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Service context (shared spin/claim logic) ───────────────────────────────
 
-/** Shared by spin and claim. Returns { ok, error? } */
-async function validateExecutorEth() {
-  const minEthWei = ethers.utils.parseEther(
-    String(constants.EXECUTOR_MIN_ETH_TRIGGER),
-  );
-  const balance = await provider.getBalance(executorWallet.address);
-  if (balance.lt(minEthWei)) {
-    return {
-      ok: false,
-      error: `Executor ETH too low for gas (need >= ${constants.EXECUTOR_MIN_ETH_TRIGGER} ETH)`,
-    };
-  }
-  return { ok: true };
+const spinCtx = {
+  slotMachine,
+  provider,
+  executorWallet,
+  vrfCoordinator,
+  vrfSubscriptionId: VRF_SUBSCRIPTION_ID,
+  minSubscriptionNativeWei: MIN_SUBSCRIPTION_NATIVE_WEI,
+  minSubscriptionLinkJuels: MIN_SUBSCRIPTION_LINK_JUELS,
+  spinAmount: SPIN_AMOUNT,
+};
+
+const claimCtx = {
+  slotMachine,
+  provider,
+  executorWallet,
+};
+
+function spinErrorStatus(err) {
+  if (err.message.startsWith("Invalid player")) return 400;
+  if (err.message.startsWith("Contract unhealthy")) return 503;
+  return 500;
 }
 
-/**
- * Validations before executing spin:
- * - Contract open (isClosed = false)
- * - Available bankroll (moneyInContract - debt) >= 30 USDC (can pay max prize 30x)
- * - Executor ETH for gas
- * - Executor USDC >= 1 (executor pays 1 USDC on behalf of player via playFor)
- * - VRF subscription has sufficient balance (native or LINK per useNativePayment)
- */
-async function validateContractHealth() {
-  const minUsdcForSpin = ethers.utils.parseUnits(
-    String(constants.EXECUTOR_MIN_USDC_FOR_SPIN),
-    6,
-  );
-  const minBankrollUsdc = ethers.utils.parseUnits(
-    String(constants.CONTRACT_MIN_AVAILABLE_BANKROLL_USDC),
-    6,
-  );
-
-  const usdc = new ethers.Contract(
-    USDC_BASE,
-    ERC20_APPROVE_ABI,
-    provider,
-  );
-
-  const [
-    closed,
-    moneyInContract,
-    debt,
-    executorEthCheck,
-    executorUsdcBalance,
-    useNative,
-  ] = await Promise.all([
-    slotMachine.isClosed(),
-    slotMachine.getMoneyInContract(),
-    slotMachine.getCurrentDebt(),
-    validateExecutorEth(),
-    usdc.balanceOf(executorWallet.address),
-    slotMachine.useNativePayment(),
-  ]);
-
-  const availableBankroll = moneyInContract.sub(debt);
-  const errors = [];
-
-  if (closed) errors.push("Contract is closed");
-  if (availableBankroll.lt(minBankrollUsdc))
-    errors.push(
-      `Available bankroll too low (need >= ${constants.CONTRACT_MIN_AVAILABLE_BANKROLL_USDC} USDC to pay max prize)`,
-    );
-  if (!executorEthCheck.ok) errors.push(executorEthCheck.error);
-  if (executorUsdcBalance.lt(minUsdcForSpin))
-    errors.push(
-      `Executor USDC too low (need >= ${constants.EXECUTOR_MIN_USDC_FOR_SPIN} USDC to execute spin)`,
-    );
-
-  // VRF subscription balance (if subscription ID configured)
-  if (VRF_SUBSCRIPTION_ID) {
-    try {
-      const sub = await vrfCoordinator.getSubscription(VRF_SUBSCRIPTION_ID);
-      const [linkBalance, nativeBalance] = [sub.balance, sub.nativeBalance];
-      if (useNative) {
-        if (nativeBalance.lt(MIN_SUBSCRIPTION_NATIVE_WEI)) {
-          errors.push(
-            `VRF subscription native balance too low (need >= ${constants.VRF_MIN_NATIVE_ETH_FOR_SPIN} ETH)`,
-          );
-        }
-      } else {
-        if (linkBalance.lt(MIN_SUBSCRIPTION_LINK_JUELS)) {
-          errors.push(
-            `VRF subscription LINK balance too low (need >= ${constants.VRF_MIN_LINK_FOR_SPIN} LINK)`,
-          );
-        }
-      }
-    } catch (err) {
-      errors.push(`VRF subscription check failed: ${err.message}`);
-    }
-  }
-
-  return { ok: errors.length === 0, errors };
+function claimErrorStatus(err) {
+  if (err.message.startsWith("Invalid user")) return 400;
+  if (err.message.startsWith("Nothing to claim")) return 400;
+  if (err.message.includes("Executor ETH")) return 503;
+  return 500;
 }
 
 // ─── Routes: paid ───────────────────────────────────────────────────────────
 
 /**
  * POST /spinWith1USDC
- * Flow: 1) x402 verifies payment 2) validate health 3) playFor 4) return requestId + txHash
+ * Flow: 1) x402 verifies payment 2) executeSpin service 3) return result
  */
 app.post("/spinWith1USDC", async (req, res) => {
   try {
     const { player, referral } = req.body || {};
-    if (
-      !player ||
-      typeof player !== "string" ||
-      !ethers.utils.isAddress(player)
-    ) {
-      return res.status(400).json({ error: "Invalid player address" });
-    }
-    const referralAddr =
-      referral && ethers.utils.isAddress(referral)
-        ? referral
-        : ethers.constants.AddressZero;
-
-    const health = await validateContractHealth();
-    if (!health.ok) {
-      return res.status(503).json({
-        error: "Contract unhealthy",
-        details: health.errors,
-      });
-    }
-
-    const tx = await slotMachine.playFor(player, referralAddr, SPIN_AMOUNT, {
-      gasLimit: 350000,
-    });
-    const receipt = await tx.wait();
-    const reqId = receipt.events?.find((e) => e.event === "SpinRequested")
-      ?.args?.[0];
-
-    if (!reqId) {
-      return res
-        .status(500)
-        .json({ error: "Could not extract requestId from tx" });
-    }
-
+    const result = await executeSpin(spinCtx, { player, referral });
     console.log(
-      `[spin] player=${player} requestId=${reqId.toString()} txHash=${receipt.transactionHash}`,
+      `[spin] player=${player} requestId=${result.requestId} txHash=${result.txHash}`,
     );
-
-    return res.json({
-      requestId: reqId.toString(),
-      txHash: receipt.transactionHash,
-      status: "pending",
-    });
+    return res.json(result);
   } catch (err) {
     console.error("[spin] error:", err.message);
-    return res.status(500).json({
-      error: err.reason || err.message || "Spin execution failed",
-    });
+    const status = spinErrorStatus(err);
+    const payload =
+      status === 503
+        ? { error: "Contract unhealthy", details: [err.message] }
+        : { error: err.reason || err.message || "Spin execution failed" };
+    if (status === 503 && err.message.startsWith("Contract unhealthy:")) {
+      payload.details = err.message.replace("Contract unhealthy: ", "").split("; ");
+    }
+    return res.status(status).json(payload);
   }
 });
 
 /**
  * POST /claim
- * Flow: 1) x402 verifies payment 2) claimPlayerEarnings for user 3) return txHash
+ * Flow: 1) x402 verifies payment 2) executeClaim service 3) return result
  */
 app.post("/claim", async (req, res) => {
   try {
     const { user } = req.body || {};
-    if (
-      !user ||
-      typeof user !== "string" ||
-      !ethers.utils.isAddress(user)
-    ) {
-      return res.status(400).json({ error: "Invalid user address" });
-    }
-
-    const userInfo = await slotMachine.infoPerUser(user);
-    const moneyToClaimForPlay =
-      userInfo.moneyEarned.sub(userInfo.moneyClaimed);
-    const moneyToClaimForReferring =
-      userInfo.earnedByReferrals.sub(userInfo.claimedByReferrals);
-    const moneyToClaim = moneyToClaimForPlay.add(moneyToClaimForReferring);
-
-    if (moneyToClaim.isZero()) {
-      return res.status(400).json({
-        error: "Nothing to claim",
-        details: "User has already claimed all earnings",
-      });
-    }
-
-    const executorCheck = await validateExecutorEth();
-    if (!executorCheck.ok) {
-      return res.status(503).json({
-        error: "Executor insufficient",
-        details: [executorCheck.error],
-      });
-    }
-
-    const tx = await slotMachine.claimPlayerEarnings(user, {
-      gasLimit: 150000,
-    });
-    const receipt = await tx.wait();
-
+    const result = await executeClaim(claimCtx, { user });
     console.log(
-      `[claim] user=${user} amount=${moneyToClaim.toString()} txHash=${receipt.transactionHash}`,
+      `[claim] user=${result.user} amount=${result.amount} txHash=${result.txHash}`,
     );
-
-    return res.json({
-      user,
-      amount: moneyToClaim.toString(),
-      txHash: receipt.transactionHash,
-      status: "claimed",
-    });
+    return res.json(result);
   } catch (err) {
     console.error("[claim] error:", err.message);
-    return res.status(500).json({
-      error: err.reason || err.message || "Claim failed",
-    });
+    const status = claimErrorStatus(err);
+    const payload =
+      status === 400 && err.message.startsWith("Nothing to claim")
+        ? { error: "Nothing to claim", details: "User has already claimed all earnings" }
+        : { error: err.reason || err.message || "Claim failed" };
+    if (status === 503) {
+      payload.error = "Executor insufficient";
+      payload.details = [err.message];
+    }
+    return res.status(status).json(payload);
   }
 });
 

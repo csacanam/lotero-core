@@ -41,6 +41,8 @@
     "lint-staged": "^13.0.3"
   },
   "resolutions": {
-    "usehooks-ts@^2.7.2": "patch:usehooks-ts@npm:^2.7.2#./.yarn/patches/usehooks-ts-npm-2.7.2-fceffe0e43.patch"
+    "usehooks-ts": "patch:usehooks-ts@npm:2.7.2#./.yarn/patches/usehooks-ts-npm-2.7.2-fceffe0e43.patch",
+    "@virtuals-protocol/acp-node@^0.3.0-beta.30": "patch:@virtuals-protocol/acp-node@npm%3A0.3.0-beta.30#./.yarn/patches/@virtuals-protocol-acp-node-npm-0.3.0-beta.30-554a2afe10.patch",
+    "@virtuals-protocol/acp-node@^0.3.0-beta.10": "patch:@virtuals-protocol/acp-node@npm%3A0.3.0-beta.30#./.yarn/patches/@virtuals-protocol-acp-node-npm-0.3.0-beta.30-554a2afe10.patch"
   }
 }
