@@ -29,6 +29,7 @@
     "vercel": "yarn workspace @se-2/frontend vercel",
     "vercel:yolo": "yarn workspace @se-2/frontend vercel:yolo",
     "agent": "yarn workspace @lotero/agent start",
+    "start:agent": "node packages/agent/src/index.js",
     "agent:dev": "yarn workspace @lotero/agent dev",
     "agent:spin:402": "yarn workspace @lotero/agent spin:402",
     "agent:spin:paid": "yarn workspace @lotero/agent spin:paid",
