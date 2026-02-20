@@ -47,7 +47,9 @@ const VRF_COORDINATOR =
   process.env.VRF_COORDINATOR || "0xd5D517aBE5cF79B7e95eC98dB0f0277788aFF634"; // Base mainnet
 const VRF_SUBSCRIPTION_ID = process.env.VRF_SUBSCRIPTION_ID;
 const MIN_SUBSCRIPTION_NATIVE_WEI = ethers.utils.parseEther(
-  String(process.env.VRF_MIN_NATIVE_ETH || constants.VRF_MIN_NATIVE_ETH_FOR_SPIN),
+  String(
+    process.env.VRF_MIN_NATIVE_ETH || constants.VRF_MIN_NATIVE_ETH_FOR_SPIN,
+  ),
 );
 const MIN_SUBSCRIPTION_LINK_JUELS = process.env.MIN_SUBSCRIPTION_LINK_JUELS
   ? ethers.BigNumber.from(process.env.MIN_SUBSCRIPTION_LINK_JUELS)
@@ -139,7 +141,7 @@ function buildFacilitatorClient() {
   } else if (isCdpFacilitator) {
     console.error(
       "CDP facilitator requires CDP_API_KEY_ID and CDP_API_KEY_SECRET in .env.\n" +
-        "Create Secret API Keys at https://portal.cdp.coinbase.com/projects/api-keys"
+        "Create Secret API Keys at https://portal.cdp.coinbase.com/projects/api-keys",
     );
     process.exit(1);
   }
@@ -268,7 +270,9 @@ app.post("/spinWith1USDC", async (req, res) => {
         ? { error: "Contract unhealthy", details: [err.message] }
         : { error: err.reason || err.message || "Spin execution failed" };
     if (status === 503 && err.message.startsWith("Contract unhealthy:")) {
-      payload.details = err.message.replace("Contract unhealthy: ", "").split("; ");
+      payload.details = err.message
+        .replace("Contract unhealthy: ", "")
+        .split("; ");
     }
     return res.status(status).json(payload);
   }
@@ -291,7 +295,10 @@ app.post("/claim", async (req, res) => {
     const status = claimErrorStatus(err);
     const payload =
       status === 400 && err.message.startsWith("Nothing to claim")
-        ? { error: "Nothing to claim", details: "User has already claimed all earnings" }
+        ? {
+            error: "Nothing to claim",
+            details: "User has already claimed all earnings",
+          }
         : { error: err.reason || err.message || "Claim failed" };
     if (status === 503) {
       payload.error = "Executor insufficient";
@@ -333,19 +340,24 @@ app.get("/", readOnlyRateLimit, (_req, res) => {
     endpoints: {
       "POST /spinWith1USDC": `Paid (${constants.SPIN_PRICE_USD} USDC). Execute spin for player.`,
       "POST /claim": `Paid (${constants.CLAIM_PRICE_USD} USDC). Claim player earnings (gasless).`,
-      "GET /round/:requestId": "Get round result by requestId.",
+      "GET /round": "Get round result. Query: requestId.",
       "GET /player/:address/balances":
         "Get player balances and referral stats.",
-      "GET /contract/health": "Contract bankroll, max bet, open/closed.",
-      "GET /cron/health": "System health for external cron/monitoring agent (read-only).",
+      "GET /contract/health":
+        "Executor ETH/USDC, contract bankroll, VRF subscription.",
+      "GET /cron/health":
+        "System health for external cron/monitoring agent (read-only).",
     },
   });
 });
 
-/** GET /round/:requestId – Round result (numbers, prize, resolved) by VRF requestId */
-app.get("/round/:requestId", readOnlyRateLimit, async (req, res) => {
+/** GET /round?requestId=... – Round result (numbers, prize, resolved) by VRF requestId */
+app.get("/round", readOnlyRateLimit, async (req, res) => {
   try {
-    const requestId = req.params.requestId;
+    const requestId = req.query.requestId;
+    if (!requestId) {
+      return res.status(400).json({ error: "Missing query parameter: requestId" });
+    }
     const resolved = await slotMachine.isResolved(requestId);
     const round = await slotMachine.getRoundInfo(requestId);
 
@@ -388,45 +400,114 @@ app.get("/player/:address/balances", readOnlyRateLimit, async (req, res) => {
   }
 });
 
-/** GET /contract/health – Bankroll, max bet, open/closed, executor ETH, VRF subscription */
+/** GET /contract/health – Executor (ETH/USDC), contract (bankroll), VRF subscription */
 app.get("/contract/health", readOnlyRateLimit, async (_req, res) => {
   try {
     const minEthWei = ethers.utils.parseEther(
-      String(constants.EXECUTOR_MIN_ETH_TRIGGER),
+      String(constants.WALLET_MIN_ETH_TRIGGER),
     );
-    const [moneyInContract, currentDebt, maxBet, closed, useNative] =
-      await Promise.all([
-        slotMachine.getMoneyInContract(),
-        slotMachine.getCurrentDebt(),
-        slotMachine.getMaxValueToPlay(),
-        slotMachine.isClosed(),
-        slotMachine.useNativePayment(),
-      ]);
-    const executorEth = await provider.getBalance(executorWallet.address);
+    const targetEthWei = ethers.utils.parseEther(
+      String(constants.WALLET_TARGET_ETH),
+    );
+    const minUsdcWei = ethers.utils.parseUnits(
+      String(constants.EXECUTOR_MIN_USDC_FOR_SPIN),
+      6,
+    );
+    const triggerBankrollWei = ethers.utils.parseUnits(
+      String(constants.CONTRACT_TOPUP_TRIGGER_BANKROLL_USDC),
+      6,
+    );
+    const targetBankrollWei = ethers.utils.parseUnits(
+      String(constants.CONTRACT_TARGET_BANKROLL_USDC),
+      6,
+    );
+
+    const usdc = new ethers.Contract(
+      USDC_BASE,
+      ERC20_APPROVE_ABI,
+      provider,
+    );
+
+    const [
+      moneyInContract,
+      currentDebt,
+      maxBet,
+      closed,
+      useNative,
+      executorEth,
+      executorUsdcRaw,
+    ] = await Promise.all([
+      slotMachine.getMoneyInContract(),
+      slotMachine.getCurrentDebt(),
+      slotMachine.getMaxValueToPlay(),
+      slotMachine.isClosed(),
+      slotMachine.useNativePayment(),
+      provider.getBalance(executorWallet.address),
+      usdc.balanceOf(executorWallet.address),
+    ]);
 
     const bankroll = moneyInContract.sub(currentDebt);
 
     const health = {
-      moneyInContract: moneyInContract.toString(),
-      currentDebt: currentDebt.toString(),
-      bankroll: bankroll.toString(),
-      maxBetSafe: maxBet.toString(),
-      contractOpen: !closed,
-      executorEthBalance: executorEth.toString(),
-      executorEthSufficient: executorEth.gte(minEthWei),
-      useNativePayment: useNative,
+      executor: {
+        eth: {
+          value: executorEth.toString(),
+          valueFormatted: ethers.utils.formatEther(executorEth),
+          sufficient: executorEth.gte(minEthWei),
+          minTrigger: String(constants.WALLET_MIN_ETH_TRIGGER),
+          target: String(constants.WALLET_TARGET_ETH),
+        },
+        usdc: {
+          value: executorUsdcRaw.toString(),
+          valueFormatted: ethers.utils.formatUnits(executorUsdcRaw, 6),
+          sufficient: executorUsdcRaw.gte(minUsdcWei),
+          minTrigger: String(constants.EXECUTOR_MIN_USDC_FOR_SPIN),
+          target: String(constants.WALLET_TARGET_USDC_BUFFER),
+        },
+      },
+      contract: {
+        moneyInContract: moneyInContract.toString(),
+        moneyInContractFormatted: ethers.utils.formatUnits(
+          moneyInContract,
+          6,
+        ),
+        currentDebt: currentDebt.toString(),
+        currentDebtFormatted: ethers.utils.formatUnits(currentDebt, 6),
+        bankroll: bankroll.toString(),
+        bankrollFormatted: ethers.utils.formatUnits(bankroll, 6),
+        bankrollSufficient: bankroll.gte(
+          ethers.utils.parseUnits(
+            String(constants.CONTRACT_MIN_AVAILABLE_BANKROLL_USDC),
+            6,
+          ),
+        ),
+        minTrigger: String(constants.CONTRACT_TOPUP_TRIGGER_BANKROLL_USDC),
+        target: String(constants.CONTRACT_TARGET_BANKROLL_USDC),
+        contractOpen: !closed,
+        maxBetSafe: maxBet.toString(),
+      },
     };
 
     if (VRF_SUBSCRIPTION_ID) {
       try {
         const sub = await vrfCoordinator.getSubscription(VRF_SUBSCRIPTION_ID);
+        const balance = useNative ? sub.nativeBalance : sub.balance;
+        const sufficient = useNative
+          ? sub.nativeBalance.gte(MIN_SUBSCRIPTION_NATIVE_WEI)
+          : sub.balance.gte(MIN_SUBSCRIPTION_LINK_JUELS);
         health.vrfSubscription = {
-          linkBalance: sub.balance.toString(),
-          nativeBalance: sub.nativeBalance.toString(),
+          balance: balance.toString(),
+          balanceFormatted: useNative
+            ? ethers.utils.formatEther(sub.nativeBalance)
+            : ethers.utils.formatEther(sub.balance),
           balanceType: useNative ? "native" : "link",
-          sufficient: useNative
-            ? sub.nativeBalance.gte(MIN_SUBSCRIPTION_NATIVE_WEI)
-            : sub.balance.gte(MIN_SUBSCRIPTION_LINK_JUELS),
+          sufficient,
+          minTrigger: useNative
+            ? String(constants.VRF_MIN_NATIVE_ETH_FOR_SPIN)
+            : String(constants.VRF_MIN_LINK_TRIGGER),
+          target: useNative
+            ? String(constants.WALLET_TARGET_ETH)
+            : String(constants.VRF_TARGET_LINK),
         };
       } catch (e) {
         health.vrfSubscription = { error: e.message };

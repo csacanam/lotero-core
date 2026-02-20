@@ -67,9 +67,13 @@ Claim player earnings (winnings + referral income). Gasless — executor pays ga
 
 ---
 
-### GET /round/:requestId (Free)
+### GET /round (Free)
 
-Round result by `requestId`. Returns `number1`, `number2`, `number3` (reel indices). See [Reading round results](#reading-round-results).
+Round result by VRF `requestId`. Query parameter: `requestId`.
+
+Example: `GET /round?requestId=123`
+
+Returns `number1`, `number2`, `number3` (reel indices). See [Reading round results](#reading-round-results).
 
 **Response:**
 
@@ -221,7 +225,7 @@ Thresholds for validation and cron logic. Modify there to change triggers:
 
 ## Reading round results
 
-`GET /round/:requestId` returns `number1`, `number2`, `number3` — **reel indices (0–9)**. Map to symbols:
+`GET /round?requestId=...` returns `number1`, `number2`, `number3` — **reel indices (0–9)**. Map to symbols:
 
 | Index | Symbol |
 |-------|--------|
@@ -239,7 +243,7 @@ See [RTP_MODEL.md](RTP_MODEL.md) for full reel layout and RTP details.
 ## Async model
 
 - `spin` returns `requestId` immediately
-- Result is fetched via `GET /round/:requestId` (VRF is async; do not wait in HTTP)
+- Result is fetched via `GET /round?requestId=...` (VRF is async; do not wait in HTTP)
 
 ---
 

@@ -45,7 +45,7 @@ Stateless HTTP API that sells spins and claims as a service. Clients pay via x40
 
 - `POST /spinWith1USDC` — Paid (x402). Execute spin for `player`.
 - `POST /claim` — Paid (x402). Claim player earnings (gasless).
-- `GET /round/:requestId`, `GET /player/:address/balances`, `GET /contract/health` — Read-only.
+- `GET /round?requestId=...`, `GET /player/:address/balances`, `GET /contract/health` — Read-only.
 - `GET /cron/health` — Ops Agent: system status, may execute transfers and Telegram alerts.
 
 ```bash
