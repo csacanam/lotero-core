@@ -29,7 +29,7 @@ async function main() {
       console.log("--", networkName, "-- 📡");
       console.log("   balance:", +ethers.utils.formatEther(balance));
       console.log("   nonce:", +(await provider.getTransactionCount(address)));
-    } catch (e) {
+    } catch {
       console.log("Can't connect to network", networkName);
     }
   }

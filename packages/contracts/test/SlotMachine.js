@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires -- Hardhat test uses CommonJS require */
+/* eslint-disable @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports -- Hardhat test uses CommonJS require */
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
 
