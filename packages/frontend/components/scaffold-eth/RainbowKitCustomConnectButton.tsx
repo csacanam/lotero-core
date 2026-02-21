@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { CopyToClipboard } from "../CopyToClipboard";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { QRCodeSVG } from "qrcode.react";
-import CopyToClipboard from "react-copy-to-clipboard";
 import { useDisconnect, useSwitchNetwork } from "wagmi";
 import {
   ArrowLeftOnRectangleIcon,
