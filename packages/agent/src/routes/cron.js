@@ -654,6 +654,15 @@ Subscription ID: ${vrfSubscriptionId}
               : vrf.paymentMode === "link" && vrf.link
                 ? `${vrf.link.value} LINK`
                 : "N/A";
+          const scan = (addr) =>
+            addr
+              ? `<a href="https://basescan.org/address/${addr}">${addr}</a>`
+              : "";
+          const scanVrfCoordinator = (addr) =>
+            addr
+              ? `<a href="https://basescan.org/address/${addr}#readContract#F8">${addr}</a>`
+              : "";
+
           let agentWalletLine = "";
           const agentWallet =
             process.env.CRON_STATUS_AGENT_WALLET ||
@@ -665,24 +674,24 @@ Subscription ID: ${vrfSubscriptionId}
                 ERC20_BALANCE_ABI,
                 provider
               ).balanceOf(agentWallet);
-              agentWalletLine = `\n\n<b>Agent Wallet:</b> ${fmtUsdc(agentBal)} USDC\n${agentWallet}`;
+              agentWalletLine = `\n\n<b>Agent Wallet:</b> ${fmtUsdc(agentBal)} USDC\n${scan(agentWallet)}`;
             } catch {
-              agentWalletLine = `\n\n<b>Agent Wallet:</b> N/A\n${agentWallet}`;
+              agentWalletLine = `\n\n<b>Agent Wallet:</b> N/A\n${scan(agentWallet)}`;
             }
           }
 
-          const vrfAddr =
-            vrfSubscriptionId != null
-              ? `SubId ${vrfSubscriptionId}`
-              : vrfCoordinator?.address ?? "";
+          const vrfCoordinatorAddr = vrfCoordinator?.address ?? "";
+          const vrfAddr = vrfSubscriptionId != null
+            ? `subID: ${vrfSubscriptionId}${vrfCoordinatorAddr ? ` ${scanVrfCoordinator(vrfCoordinatorAddr)}` : ""}`
+            : scanVrfCoordinator(vrfCoordinatorAddr);
 
           const statusMsg = `<b>📊 Status Report</b>
 
 <b>Contract Bankroll:</b> ${contract.bankrollUSDC} USDC
-${slotMachineAddress}
+${scan(slotMachineAddress)}
 
 <b>Executor Wallet:</b> ${wallet.eth.value} ETH
-${walletAddress}
+${scan(walletAddress)}
 
 <b>VRF Coordinator:</b> ${vrfVal}
 ${vrfAddr}${agentWalletLine}`;
