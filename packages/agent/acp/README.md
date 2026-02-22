@@ -16,6 +16,10 @@ Integrates Lotero with [Virtuals ACP](https://github.com/Virtual-Protocol/acp-no
 
 ## Run
 
+The ACP seller **starts automatically** when you run the main agent (`yarn agent`). Express + x402 + ACP seller run together.
+
+To run the ACP seller **standalone** (without Express):
+
 ```bash
 yarn acp:seller
 ```

@@ -63,13 +63,18 @@ if (!EXECUTOR_PRIVATE_KEY || !SLOT_MACHINE_ADDRESS) {
   );
   process.exit(1);
 }
-if (
-  !WHITELISTED_WALLET_PRIVATE_KEY ||
-  !SELLER_ENTITY_ID ||
-  !SELLER_AGENT_WALLET_ADDRESS
-) {
+
+const scriptPath = process.argv[1]?.replace(/\\/g, "/") ?? "";
+const isRunDirectly =
+  scriptPath.endsWith("acp/seller.js") || scriptPath.includes("/acp/seller.js");
+const hasAcpEnv =
+  WHITELISTED_WALLET_PRIVATE_KEY &&
+  SELLER_ENTITY_ID &&
+  SELLER_AGENT_WALLET_ADDRESS;
+
+if (isRunDirectly && !hasAcpEnv) {
   console.warn(
-    "[acp-seller] ACP_* env vars not set – ACP seller disabled. Set ACP_SELLER_WHITELISTED_WALLET_PRIVATE_KEY, ACP_SELLER_ENTITY_ID, ACP_SELLER_AGENT_WALLET_ADDRESS to enable.",
+    "[acp-seller] ACP_* env vars not set. Set ACP_SELLER_WHITELISTED_WALLET_PRIVATE_KEY, ACP_SELLER_ENTITY_ID, ACP_SELLER_AGENT_WALLET_ADDRESS to enable.",
   );
   process.exit(0);
 }
@@ -104,8 +109,14 @@ const claimCtx = {
   executorWallet,
 };
 
-/** Start ACP seller. No-op if env vars missing. */
+/** Start ACP seller. No-op if env vars missing (when run from index.js). */
 export async function startAcpSeller() {
+  if (!hasAcpEnv) {
+    console.log(
+      "[acp-seller] ACP_* env vars not set – ACP seller skipped (Express + x402 still active)",
+    );
+    return;
+  }
   let key = WHITELISTED_WALLET_PRIVATE_KEY.trim().replace(/^["']|["']$/g, "");
   if (!key.startsWith("0x")) key = `0x${key}`;
 
@@ -252,9 +263,6 @@ export async function startAcpSeller() {
 }
 
 // Run when executed directly (e.g. node acp/seller.js or node packages/agent/acp/seller.js)
-const scriptPath = process.argv[1]?.replace(/\\/g, "/") ?? "";
-const isRunDirectly =
-  scriptPath.endsWith("acp/seller.js") || scriptPath.includes("/acp/seller.js");
 if (isRunDirectly) {
   startAcpSeller().catch((err) => {
     console.error("[acp-seller] Failed:", err.message);

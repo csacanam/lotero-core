@@ -25,6 +25,7 @@ import constants from "./utils/constants.js";
 import { createCronRouter } from "./routes/cron.js";
 import { executeSpin } from "./services/spin.js";
 import { executeClaim } from "./services/claim.js";
+import { startAcpSeller } from "../acp/seller.js";
 
 // ─── Config ────────────────────────────────────────────────────────────────
 // Required env vars (no defaults)
@@ -550,12 +551,18 @@ async function ensureUsdcApproval() {
   console.log("[startup] USDC approved. Tx:", tx.hash);
 }
 
-/** Ensures USDC approval, then starts Express server on PORT. */
+/** Ensures USDC approval, starts Express server, then ACP seller (if env vars set). */
 async function start() {
   await ensureUsdcApproval();
   app.listen(PORT, () => {
     console.log(`Lotero Agent listening at http://localhost:${PORT}`);
   });
+  try {
+    await startAcpSeller();
+  } catch (err) {
+    console.error("[startup] ACP seller failed:", err.message);
+    // Express keeps running; ACP is optional
+  }
 }
 
 start().catch((err) => {
