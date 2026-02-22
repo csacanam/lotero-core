@@ -21,7 +21,7 @@ import {
   AcpAgentSort,
   AcpGraduationStatus,
   AcpOnlineStatus,
-  baseAcpX402ConfigV2,
+  baseAcpConfigV2,
 } from "@virtuals-protocol/acp-node";
 
 const AcpClient = acpNode?.default ?? acpNode;
@@ -98,12 +98,13 @@ export async function runAcpBuyer() {
     process.exit(1);
   }
 
-  // Only override rpcEndpoint for public reads (avoids rate limit). Keep alchemyRpcUrl as default
-  // (Virtuals proxy) – policy 186aaa4a... requires Virtuals' Alchemy app, not custom key.
+  // Use baseAcpConfigV2 (no x402) so payment flows via createPayableRequirement
+  // to executor wallet. With baseAcpX402ConfigV2, payAndAcceptRequirement uses
+  // performX402Payment instead, routing funds to agent wallet.
   const baseRpc = process.env.BASE_RPC?.trim();
   const acpConfig = baseRpc
-    ? { ...baseAcpX402ConfigV2, rpcEndpoint: baseRpc }
-    : baseAcpX402ConfigV2;
+    ? { ...baseAcpConfigV2, rpcEndpoint: baseRpc }
+    : baseAcpConfigV2;
 
   const acpContractClient = await AcpContractClientV2.build(
     key,
@@ -150,7 +151,8 @@ export async function runAcpBuyer() {
           job.deliverable
         );
       } else if (job.phase === AcpJobPhases.REJECTED) {
-        console.log(`[acp-buyer] Job ${job.id} rejected by seller`);
+        const reason = job.rejectionReason || "(no reason provided)";
+        console.log(`[acp-buyer] Job ${job.id} rejected by seller: ${reason}`);
       }
     },
   });

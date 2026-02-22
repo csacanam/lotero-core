@@ -11,7 +11,12 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import acpNode from "@virtuals-protocol/acp-node";
-import { AcpContractClientV2, AcpJobPhases } from "@virtuals-protocol/acp-node";
+import {
+  AcpContractClientV2,
+  AcpJobPhases,
+  FareAmount,
+  MemoType,
+} from "@virtuals-protocol/acp-node";
 
 const AcpClient = acpNode?.default ?? acpNode;
 import { ethers } from "ethers";
@@ -177,9 +182,21 @@ export async function startAcpSeller() {
         }
 
         await job.accept("Lotero slot machine service");
-        const price = isSpin ? ACP_SPIN_PRICE : ACP_CLAIM_PRICE;
-        await job.createRequirement(`Pay ${price} USDC to proceed`);
-        console.log(`[acp-seller] Job ${job.id} accepted`);
+        const price = parseFloat(isSpin ? ACP_SPIN_PRICE : ACP_CLAIM_PRICE);
+        try {
+          await job.createPayableRequirement(
+            `Pay ${price} USDC to proceed`,
+            MemoType.PAYABLE_REQUEST,
+            new FareAmount(price, job.baseFare),
+            executorWallet.address,
+          );
+          console.log(`[acp-seller] Job ${job.id} accepted`);
+        } catch (err) {
+          console.error(`[acp-seller] createPayableRequirement failed:`, err);
+          await job.reject(
+            err.message || "Failed to create payable requirement",
+          );
+        }
       } else if (
         job.phase === AcpJobPhases.TRANSACTION &&
         memoToSign?.nextPhase === AcpJobPhases.EVALUATION
