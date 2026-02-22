@@ -34,7 +34,7 @@ yarn workspace @lotero/agent spin:402 [player] [url]
 
 ### spin-paid
 
-Sends a POST **with** x402 payment (1.05 USDC). The client signs the payment and the spin is executed on-chain.
+Sends a POST **with** x402 payment (1.1 USDC). The client signs the payment and the spin is executed on-chain.
 
 ```bash
 yarn agent:spin:paid
@@ -55,7 +55,7 @@ yarn workspace @lotero/agent spin:paid [player] [url]
 
 | Variable            | Required | Description                                                     |
 | ------------------- | -------- | --------------------------------------------------------------- |
-| `PAYER_PRIVATE_KEY` | Yes      | Private key of the paying wallet (must have 1.05+ USDC on Base) |
+| `PAYER_PRIVATE_KEY` | Yes      | Private key of the paying wallet (must have 1.1+ USDC on Base) |
 
 Add `PAYER_PRIVATE_KEY` to `packages/agent/.env` (not in .env.example, which is a template).
 

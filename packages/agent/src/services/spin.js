@@ -31,18 +31,17 @@ export async function executeSpin(ctx, { player, referral }) {
 
   const { slotMachine, spinAmount } = ctx;
   // Base L2: cap priority fee to avoid overpaying (defaults were ~1.5 Gwei)
-  const maxPriorityFeeGwei = Number(process.env.GAS_MAX_PRIORITY_FEE_GWEI) || 0.05;
-  const maxFeeGwei = Number(process.env.GAS_MAX_FEE_GWEI) || 1;
-  const tx = await slotMachine.playFor(
-    player,
-    referralAddr,
-    spinAmount,
-    {
-      gasLimit: 350000,
-      maxPriorityFeePerGas: ethers.utils.parseUnits(String(maxPriorityFeeGwei), "gwei"),
-      maxFeePerGas: ethers.utils.parseUnits(String(maxFeeGwei), "gwei"),
-    },
-  );
+  const maxPriorityFeeGwei =
+    Number(process.env.GAS_MAX_PRIORITY_FEE_GWEI) || 0.05;
+  const maxFeeGwei = Number(process.env.GAS_MAX_FEE_GWEI) || 0.3;
+  const tx = await slotMachine.playFor(player, referralAddr, spinAmount, {
+    gasLimit: 350000,
+    maxPriorityFeePerGas: ethers.utils.parseUnits(
+      String(maxPriorityFeeGwei),
+      "gwei",
+    ),
+    maxFeePerGas: ethers.utils.parseUnits(String(maxFeeGwei), "gwei"),
+  });
   const receipt = await tx.wait();
   const reqId = receipt.events?.find((e) => e.event === "SpinRequested")
     ?.args?.[0];

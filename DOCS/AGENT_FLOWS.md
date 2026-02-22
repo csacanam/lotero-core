@@ -91,7 +91,7 @@ sequenceDiagram
 
 ## 2. Spin flow (`POST /spinWith1USDC`)
 
-Client pays 1.05 USDC via x402. Executor pays 1 USDC on-chain and gas.
+Client pays 1.1 USDC via x402. Executor pays 1 USDC on-chain and gas.
 
 ### Sequence diagram
 

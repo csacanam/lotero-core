@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Test: POST /spinWith1USDC WITH payment (1.05 USDC via x402).
+ * Test: POST /spinWith1USDC WITH payment (1.1 USDC via x402).
  * Requires wallet with USDC on Base.
  *
  * Usage: node scripts/spin-paid.js [player] [url]
@@ -36,7 +36,7 @@ const url = `${baseUrl}/spinWith1USDC`;
 async function main() {
   if (!PAYER_PRIVATE_KEY) {
     console.error(
-      "Missing PAYER_PRIVATE_KEY in .env (wallet that pays 1.05 USDC)"
+      "Missing PAYER_PRIVATE_KEY in .env (wallet that pays 1.1 USDC)"
     );
     process.exit(1);
   }

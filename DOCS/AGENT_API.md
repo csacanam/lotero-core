@@ -8,14 +8,14 @@ REST API and configuration for the Lotero Agent. See [packages/agent/README.md](
 
 | Service | Price | Breakdown |
 |---------|-------|-----------|
-| `spinWith1USDC` | 1.05 USDC | 1.00 bet + 0.05 fee (gas + VRF + service) |
+| `spinWith1USDC` | 1.1 USDC | 1.00 bet + 0.1 fee (gas + VRF + service) |
 | `claim` | 0.5 USDC | Fee for gasless earnings withdrawal |
 
 ---
 
 ## Endpoints
 
-### POST /spinWith1USDC (Paid, 1.05 USDC)
+### POST /spinWith1USDC (Paid, 1.1 USDC)
 
 Execute one slot spin for a player. Gasless for caller — executor pays gas and bet.
 
@@ -254,5 +254,5 @@ See [packages/agent/scripts/README.md](../packages/agent/scripts/README.md) for 
 | Script | Command | Description |
 |--------|---------|-------------|
 | spin:402 | `yarn agent:spin:402` | POST /spinWith1USDC without payment; expects 402 |
-| spin:paid | `yarn agent:spin:paid` | POST /spinWith1USDC with x402 (1.05 USDC). Requires `PAYER_PRIVATE_KEY`. |
+| spin:paid | `yarn agent:spin:paid` | POST /spinWith1USDC with x402 (1.1 USDC). Requires `PAYER_PRIVATE_KEY`. |
 | claim:paid | `yarn agent:claim:paid` | POST /claim with x402 (0.5 USDC). Requires `PAYER_PRIVATE_KEY`. |

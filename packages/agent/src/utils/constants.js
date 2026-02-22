@@ -12,7 +12,7 @@
 // ─── Pricing (x402 paid routes) ─────────────────────────────────────────────
 
 /** Price in USD for one spin (player pays this via x402) */
-export const SPIN_PRICE_USD = "1.05";
+export const SPIN_PRICE_USD = "1.1";
 
 /** Price in USD for claim (player pays this via x402 for gasless claim) */
 export const CLAIM_PRICE_USD = "0.5";
