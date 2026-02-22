@@ -15,7 +15,7 @@
 export const SPIN_PRICE_USD = "1.1";
 
 /** Price in USD for claim (player pays this via x402 for gasless claim) */
-export const CLAIM_PRICE_USD = "0.5";
+export const CLAIM_PRICE_USD = "0.1";
 
 // ─── Contract (SlotMachine) – spin validation ─────────────────────────────────
 

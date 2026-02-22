@@ -41,7 +41,7 @@ Lotero lets users (or AI agents) bet USDC and win prizes when three matching sym
 
 ### Lotero Agent
 
-Stateless HTTP API that sells spins and claims as a service. Clients pay via x402 (1.1 USDC spin, 0.5 USDC claim); the agent relays `playFor` and `claimPlayerEarnings` onchain. Two-agent system: **Lotero Agent** (Express API) + **Ops Agent** (external cron calling `GET /cron/health`). See [packages/agent/README.md](packages/agent/README.md).
+Stateless HTTP API that sells spins and claims as a service. Clients pay via x402 (1.1 USDC spin, 0.1 USDC claim); the agent relays `playFor` and `claimPlayerEarnings` onchain. Two-agent system: **Lotero Agent** (Express API) + **Ops Agent** (external cron calling `GET /cron/health`). See [packages/agent/README.md](packages/agent/README.md).
 
 - `POST /spinWith1USDC` — Paid (x402). Execute spin for `player`.
 - `POST /claim` — Paid (x402). Claim player earnings (gasless).

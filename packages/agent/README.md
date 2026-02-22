@@ -90,7 +90,7 @@ curl http://localhost:4021/contract/health
 | Service         | Price     |
 | --------------- | --------- |
 | `spinWith1USDC` | 1.1 USDC |
-| `claim`         | 0.5 USDC  |
+| `claim`         | 0.1 USDC  |
 
 ---
 
