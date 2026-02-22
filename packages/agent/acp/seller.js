@@ -123,6 +123,9 @@ export async function startAcpSeller() {
     SELLER_AGENT_WALLET_ADDRESS,
   );
 
+  const acceptedJobIds = new Set();
+  const deliveredJobIds = new Set();
+
   const acpClient = new AcpClient({
     acpContractClient,
     onNewTask: async (job, memoToSign) => {
@@ -130,6 +133,10 @@ export async function startAcpSeller() {
         job.phase === AcpJobPhases.REQUEST &&
         memoToSign?.nextPhase === AcpJobPhases.NEGOTIATION
       ) {
+        if (acceptedJobIds.has(job.id)) {
+          return;
+        }
+        acceptedJobIds.add(job.id);
         const req = job.requirement || {};
         const isSpin = "player" in req;
         const isClaim = "user" in req;
@@ -182,25 +189,39 @@ export async function startAcpSeller() {
         }
 
         await job.accept("Lotero slot machine service");
-        const price = parseFloat(isSpin ? ACP_SPIN_PRICE : ACP_CLAIM_PRICE);
-        try {
-          await job.createPayableRequirement(
-            `Pay ${price} USDC to proceed`,
-            MemoType.PAYABLE_REQUEST,
-            new FareAmount(price, job.baseFare),
-            executorWallet.address,
-          );
-          console.log(`[acp-seller] Job ${job.id} accepted`);
-        } catch (err) {
-          console.error(`[acp-seller] createPayableRequirement failed:`, err);
-          await job.reject(
-            err.message || "Failed to create payable requirement",
+        if (isSpin) {
+          // Spin: payable = user capital (1 USDC bet) to executor. Service cost = job offering price in Virtuals.
+          const betAmount = 1;
+          try {
+            await job.createPayableRequirement(
+              `Send ${betAmount} USDC to spin (service fee set in job offering)`,
+              MemoType.PAYABLE_REQUEST,
+              new FareAmount(betAmount, job.baseFare),
+              executorWallet.address,
+            );
+          } catch (err) {
+            console.error(`[acp-seller] createPayableRequirement failed:`, err);
+            await job.reject(
+              err.message || "Failed to create payable requirement",
+            );
+            return;
+          }
+        } else {
+          // Claim: no capital to transfer, job offering price = service fee
+          await job.createRequirement(
+            "Proceed to claim (service fee via job offering)",
           );
         }
+        console.log(`[acp-seller] Job ${job.id} accepted`);
       } else if (
         job.phase === AcpJobPhases.TRANSACTION &&
         memoToSign?.nextPhase === AcpJobPhases.EVALUATION
       ) {
+        if (deliveredJobIds.has(job.id)) {
+          return;
+        }
+        deliveredJobIds.add(job.id);
+
         const req = job.requirement || {};
         try {
           let result;
@@ -221,6 +242,7 @@ export async function startAcpSeller() {
           });
           console.log(`[acp-seller] Job ${job.id} delivered`);
         } catch (err) {
+          deliveredJobIds.delete(job.id);
           console.error(`[acp-seller] Job ${job.id} error:`, err.message);
           await job.reject(err.message);
         }

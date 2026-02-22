@@ -98,9 +98,7 @@ export async function runAcpBuyer() {
     process.exit(1);
   }
 
-  // Use baseAcpConfigV2 (no x402) so payment flows via createPayableRequirement
-  // to executor wallet. With baseAcpX402ConfigV2, payAndAcceptRequirement uses
-  // performX402Payment instead, routing funds to agent wallet.
+  // baseAcpConfigV2 (no x402): payments flow via createPayableRequirement to executor wallet.
   const baseRpc = process.env.BASE_RPC?.trim();
   const acpConfig = baseRpc
     ? { ...baseAcpConfigV2, rpcEndpoint: baseRpc }
