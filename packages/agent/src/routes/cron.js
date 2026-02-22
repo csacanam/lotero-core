@@ -15,12 +15,18 @@
  * 5. Wallet excess → contract: when bankroll < 90 and excess >= 5, only if step 3 did not transfer
  * 6. Fetch VRF subscription, build VRF LINK low alert if applicable
  * 7. Send all alerts in order: critical → warning → info
+ * 8. Status report (every 6 cycles ≈ 1 hour) when CRON_STATUS_REPORT=true
  */
 
 import express from "express";
 import { ethers } from "ethers";
 import constants from "../utils/constants.js";
 import { sendTelegramAlert } from "../utils/notify.js";
+
+const CRON_STATUS_REPORT = process.env.CRON_STATUS_REPORT === "true";
+const CRON_STATUS_EVERY_N_CYCLES = 6; // 6 × 10 min = 1 hour
+
+let cronCycleCount = 0;
 
 // ─── ABIs & formatting ───────────────────────────────────────────────────
 
@@ -632,6 +638,61 @@ Subscription ID: ${vrfSubscriptionId}
       }
       for (const a of alertInfo) {
         await sendTelegramAlert(a.key, a.msg).catch(() => {});
+      }
+
+      // ═══════════════════════════════════════════════════════════════════
+      // 9. STATUS REPORT (every 6 cycles ≈ 1 hour when cron runs every 10 min)
+      // ═══════════════════════════════════════════════════════════════════
+
+      if (CRON_STATUS_REPORT) {
+        cronCycleCount += 1;
+        if (cronCycleCount >= CRON_STATUS_EVERY_N_CYCLES) {
+          cronCycleCount = 0;
+          const vrfVal =
+            vrf.paymentMode === "native" && vrf.native
+              ? `${vrf.native.value} ETH`
+              : vrf.paymentMode === "link" && vrf.link
+                ? `${vrf.link.value} LINK`
+                : "N/A";
+          const shortAddr = (addr) =>
+            addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : "";
+
+          let agentWalletLine = "";
+          const agentWallet =
+            process.env.CRON_STATUS_AGENT_WALLET ||
+            process.env.ACP_SELLER_AGENT_WALLET_ADDRESS;
+          if (agentWallet && ethers.utils.isAddress(agentWallet)) {
+            try {
+              const agentBal = await new ethers.Contract(
+                usdcAddress,
+                ERC20_BALANCE_ABI,
+                provider
+              ).balanceOf(agentWallet);
+              agentWalletLine = `\n<b>Agent Wallet:</b> ${fmtUsdc(agentBal)} USDC\n${shortAddr(agentWallet)}`;
+            } catch {
+              agentWalletLine = `\n<b>Agent Wallet:</b> N/A\n${shortAddr(agentWallet)}`;
+            }
+          }
+
+          const vrfAddr =
+            vrfSubscriptionId != null
+              ? `SubId ${vrfSubscriptionId}`
+              : vrfCoordinator?.address
+                ? shortAddr(vrfCoordinator.address)
+                : "";
+
+          const statusMsg = `<b>📊 Status Report</b>
+
+<b>Contract Bankroll:</b> ${contract.bankrollUSDC} USDC
+${shortAddr(slotMachineAddress)}
+
+<b>Executor Wallet:</b> ${wallet.eth.value} ETH
+${shortAddr(walletAddress)}
+
+<b>VRF Coordinator:</b> ${vrfVal}
+${vrfAddr}${agentWalletLine}`;
+          await sendTelegramAlert("status_report", statusMsg).catch(() => {});
+        }
       }
 
       res.json({
