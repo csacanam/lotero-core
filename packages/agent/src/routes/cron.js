@@ -654,9 +654,6 @@ Subscription ID: ${vrfSubscriptionId}
               : vrf.paymentMode === "link" && vrf.link
                 ? `${vrf.link.value} LINK`
                 : "N/A";
-          const shortAddr = (addr) =>
-            addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : "";
-
           let agentWalletLine = "";
           const agentWallet =
             process.env.CRON_STATUS_AGENT_WALLET ||
@@ -668,26 +665,24 @@ Subscription ID: ${vrfSubscriptionId}
                 ERC20_BALANCE_ABI,
                 provider
               ).balanceOf(agentWallet);
-              agentWalletLine = `\n<b>Agent Wallet:</b> ${fmtUsdc(agentBal)} USDC\n${shortAddr(agentWallet)}`;
+              agentWalletLine = `\n\n<b>Agent Wallet:</b> ${fmtUsdc(agentBal)} USDC\n${agentWallet}`;
             } catch {
-              agentWalletLine = `\n<b>Agent Wallet:</b> N/A\n${shortAddr(agentWallet)}`;
+              agentWalletLine = `\n\n<b>Agent Wallet:</b> N/A\n${agentWallet}`;
             }
           }
 
           const vrfAddr =
             vrfSubscriptionId != null
               ? `SubId ${vrfSubscriptionId}`
-              : vrfCoordinator?.address
-                ? shortAddr(vrfCoordinator.address)
-                : "";
+              : vrfCoordinator?.address ?? "";
 
           const statusMsg = `<b>📊 Status Report</b>
 
 <b>Contract Bankroll:</b> ${contract.bankrollUSDC} USDC
-${shortAddr(slotMachineAddress)}
+${slotMachineAddress}
 
 <b>Executor Wallet:</b> ${wallet.eth.value} ETH
-${shortAddr(walletAddress)}
+${walletAddress}
 
 <b>VRF Coordinator:</b> ${vrfVal}
 ${vrfAddr}${agentWalletLine}`;
