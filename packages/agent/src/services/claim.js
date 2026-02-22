@@ -37,8 +37,13 @@ export async function executeClaim(ctx, { user }) {
     throw new Error(executorCheck.error);
   }
 
+  // Base L2: cap priority fee to avoid overpaying
+  const maxPriorityFeeGwei = Number(process.env.GAS_MAX_PRIORITY_FEE_GWEI) || 0.05;
+  const maxFeeGwei = Number(process.env.GAS_MAX_FEE_GWEI) || 1;
   const tx = await slotMachine.claimPlayerEarnings(user, {
     gasLimit: 150000,
+    maxPriorityFeePerGas: ethers.utils.parseUnits(String(maxPriorityFeeGwei), "gwei"),
+    maxFeePerGas: ethers.utils.parseUnits(String(maxFeeGwei), "gwei"),
   });
   const receipt = await tx.wait();
 
