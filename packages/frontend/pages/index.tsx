@@ -30,6 +30,10 @@ const SlotMachine = (): JSX.Element => {
   const [reelsStopped, setReelsStopped] = useState<[boolean, boolean, boolean]>([true, true, true]);
   const [showWinCelebration, setShowWinCelebration] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [claimResult, setClaimResult] = useState<{ status: "success" | "error" | "nothing"; amount?: string } | null>(
+    null,
+  );
 
   // Check localStorage for disclaimer acceptance on mount
   useEffect(() => {
@@ -266,7 +270,11 @@ const SlotMachine = (): JSX.Element => {
       return;
     }
 
+    setIsClaiming(true);
+    setClaimResult(null);
+
     try {
+      const claimableAmount = formatUnits(BigInt(winBalance + referralBalance), 6);
       const fetchWithPayment = await createX402Fetch();
       const res = await fetchWithPayment(`${AGENT_URL}/claim`, {
         method: "POST",
@@ -282,16 +290,22 @@ const SlotMachine = (): JSX.Element => {
       await res.json();
       refetchBalance();
       refetchUserInfo();
-      alert(t("index.claimSuccess"));
+      setClaimResult({ status: "success", amount: claimableAmount });
+      (document.getElementById("claim_modal") as HTMLDialogElement)?.showModal();
     } catch (error: any) {
       console.error("Claim error:", error);
-      if (error.message?.includes("rejected") || error.message?.includes("denied")) return;
-      if (error.message?.includes("Nothing to claim")) {
-        alert(t("index.nothingToClaim"));
+      if (error.message?.includes("rejected") || error.message?.includes("denied")) {
+        setIsClaiming(false);
         return;
       }
-      alert(error.message || t("index.claimError"));
+      if (error.message?.includes("Nothing to claim")) {
+        setClaimResult({ status: "nothing" });
+      } else {
+        setClaimResult({ status: "error" });
+      }
+      (document.getElementById("claim_modal") as HTMLDialogElement)?.showModal();
     }
+    setIsClaiming(false);
   };
 
   // ─── Slot machine animation ──────────────────────────────────────────────
@@ -595,9 +609,9 @@ const SlotMachine = (): JSX.Element => {
                 <button
                   className="casino-btn casino-btn-claim"
                   onClick={handleClaim}
-                  disabled={winBalance + referralBalance <= 0}
+                  disabled={winBalance + referralBalance <= 0 || isClaiming}
                 >
-                  {t("index.claimAll")}
+                  {isClaiming ? t("index.claiming") : t("index.claimAll")}
                 </button>
                 <span className="fee-note">{t("index.serviceFee")}</span>
 
@@ -818,6 +832,32 @@ const SlotMachine = (): JSX.Element => {
         <div className="modal-box">
           <h3 className="font-bold text-lg">{t("index.gameClosed")}</h3>
           <p className="py-4">{t("index.gameClosedMsg")}</p>
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="casino-btn casino-btn-secondary">{t("common.close")}</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+
+      {/* Claim Result Modal */}
+      <dialog id="claim_modal" className="modal">
+        <div className={`modal-box result-modal ${claimResult?.status === "success" ? "modal-win" : "modal-lose"}`}>
+          <h3 className="result-title">
+            {claimResult?.status === "success"
+              ? t("index.claimSuccessTitle")
+              : claimResult?.status === "nothing"
+              ? t("index.nothingToClaimTitle")
+              : t("index.claimErrorTitle")}
+          </h3>
+          {claimResult?.status === "success" && (
+            <div className="win-prize-display">
+              <span className="win-amount-label">{t("index.claimedAmount")}</span>
+              <span className="win-amount">{claimResult.amount} USDC</span>
+            </div>
+          )}
+          {claimResult?.status === "nothing" && <p className="claim-modal-msg">{t("index.nothingToClaim")}</p>}
+          {claimResult?.status === "error" && <p className="claim-modal-msg">{t("index.claimError")}</p>}
           <div className="modal-action">
             <form method="dialog">
               <button className="casino-btn casino-btn-secondary">{t("common.close")}</button>
