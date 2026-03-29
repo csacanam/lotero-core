@@ -163,6 +163,14 @@ const app = express();
 app.set("trust proxy", 1); // Required when behind reverse proxy (e.g. Digital Ocean)
 app.use(
   cors({
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Payment",
+      "Payment",
+      "payment-signature",
+      "x-payment",
+    ],
     exposedHeaders: [
       "payment-required",
       "payment-response",
