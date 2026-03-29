@@ -151,7 +151,8 @@ html, body {
   display: flex;
   gap: 24px;
   width: 100%;
-  align-items: stretch;
+  align-items: flex-start;
+  justify-content: center;
 
   @media (max-width: 1024px) {
     flex-direction: column;
