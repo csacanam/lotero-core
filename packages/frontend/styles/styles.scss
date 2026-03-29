@@ -98,14 +98,105 @@ html, body {
     }
   }
 
-  .footer-disclaimer {
-    margin: 0;
-    font-size: 10px;
-    color: #666;
-    text-align: center;
-    line-height: 1.5;
-    max-width: 420px;
+}
+
+// ─── Disclaimer Modal ───────────────────────────────────────────────────────
+.disclaimer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.disclaimer-modal {
+  background: linear-gradient(180deg, #1e1e30 0%, #12121e 100%);
+  border: 2px solid rgba($casino-gold, 0.4);
+  border-radius: 16px;
+  box-shadow:
+    0 0 50px rgba(0,0,0,0.8),
+    0 0 20px rgba($casino-gold, 0.15);
+  max-width: 440px;
+  width: 100%;
+  padding: 32px;
+  text-align: center;
+  animation: disclaimerFadeIn 0.4s ease-out;
+}
+
+.disclaimer-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid $casino-red;
+  color: $casino-red;
+  font-size: 20px;
+  font-weight: 900;
+  margin-bottom: 16px;
+}
+
+.disclaimer-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #fff;
+  margin: 0 0 16px;
+}
+
+.disclaimer-text {
+  text-align: left;
+  font-size: 14px;
+  color: #bbb;
+  line-height: 1.6;
+  margin-bottom: 24px;
+
+  p {
+    margin: 0 0 10px;
   }
+
+  strong {
+    color: #fff;
+  }
+
+  ul {
+    margin: 8px 0 0;
+    padding-left: 20px;
+
+    li {
+      margin-bottom: 6px;
+      color: #999;
+
+      &::marker {
+        color: $casino-gold;
+      }
+    }
+  }
+}
+
+.disclaimer-accept-btn {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(180deg, $casino-gold 0%, $casino-gold-dark 100%);
+  color: $casino-black;
+  font-size: 14px;
+  letter-spacing: 2px;
+  border-radius: 8px;
+
+  &:hover {
+    box-shadow: 0 0 20px rgba($casino-gold, 0.4);
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes disclaimerFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 // ─── Neon Header ────────────────────────────────────────────────────────────

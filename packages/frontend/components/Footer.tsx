@@ -12,9 +12,6 @@ export const Footer = () => {
           Saka Labs
         </a>
       </span>
-      <p className="footer-disclaimer">
-        Lotero is an experimental, open-source protocol. Use at your own risk. No warranties. Must be 18+.
-      </p>
     </div>
   );
 };

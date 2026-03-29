@@ -26,6 +26,19 @@ const SlotMachine = (): JSX.Element => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [showWinCelebration, setShowWinCelebration] = useState(false);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+
+  // Check localStorage for disclaimer acceptance on mount
+  useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("lotero_disclaimer_accepted") === "true") {
+      setDisclaimerAccepted(true);
+    }
+  }, []);
+
+  const acceptDisclaimer = () => {
+    localStorage.setItem("lotero_disclaimer_accepted", "true");
+    setDisclaimerAccepted(true);
+  };
   const rollIntervalRef = useRef<NodeJS.Timer | undefined>(undefined);
   const casinoSoundRef = useRef<HTMLAudioElement | null>(null);
   const pollAbortRef = useRef<AbortController | null>(null);
@@ -593,7 +606,7 @@ const SlotMachine = (): JSX.Element => {
                     (document.getElementById("referral_modal") as HTMLDialogElement)?.showModal();
                   }}
                 >
-                  INVITE FRIENDS &amp; EARN 1%
+                  INVITE &amp; EARN
                 </a>
               </>
             ) : (
@@ -810,6 +823,31 @@ const SlotMachine = (): JSX.Element => {
           </div>
         </div>
       </dialog>
+
+      {/* Disclaimer Modal */}
+      {!disclaimerAccepted && (
+        <div className="disclaimer-overlay">
+          <div className="disclaimer-modal">
+            <div className="disclaimer-icon">18+</div>
+            <h3 className="disclaimer-title">Before you play</h3>
+            <div className="disclaimer-text">
+              <p>
+                Lotero is an <strong>experimental, open-source protocol</strong> built for educational purposes.
+              </p>
+              <p>By continuing, you acknowledge that:</p>
+              <ul>
+                <li>You are at least 18 years old</li>
+                <li>You understand this is an experimental protocol</li>
+                <li>You play at your own risk with no warranties</li>
+                <li>You are responsible for compliance with your local laws</li>
+              </ul>
+            </div>
+            <button className="casino-btn disclaimer-accept-btn" onClick={acceptDisclaimer}>
+              I UNDERSTAND, LET ME PLAY
+            </button>
+          </div>
+        </div>
+      )}
 
       <audio ref={casinoSoundRef} />
     </div>
