@@ -412,6 +412,14 @@ const SlotMachine = (): JSX.Element => {
       <div className="neon-header">
         <h1 className="neon-title">LOTERO</h1>
         <p className="neon-subtitle">PROVABLY FAIR SLOT MACHINE ON BASE</p>
+        <a
+          href="https://camilos-personal-organization.gitbook.io/lotero/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="how-it-works-link"
+        >
+          How it works
+        </a>
       </div>
 
       {/* Main casino layout */}
