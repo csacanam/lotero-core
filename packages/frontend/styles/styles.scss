@@ -805,22 +805,21 @@ html, body {
     position: relative;
     width: $icon_width;
     height: 100%;
-    background-image: url(/lotero-icons.png);
-    background-position: 0 0;
-    background-repeat: repeat-y;
-    background-size: $icon_width auto;
+    background: transparent;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
 
     &.reel-spinning {
+      background-image: url(/lotero-icons.png);
+      background-position: 0 0;
+      background-repeat: repeat-y;
+      background-size: $icon_width auto;
       animation: reelSpin 0.15s linear infinite;
     }
 
     .reel-stopped-img {
-      position: relative;
-      z-index: 2;
       width: 65px !important;
       height: 65px !important;
       object-fit: contain;

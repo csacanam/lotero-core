@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { formatUnits } from "viem";
 import { useAccount, useContractRead, useDisconnect, useEnsName, useWalletClient } from "wagmi";
+import { MetaHeader } from "~~/components/MetaHeader";
 import externalContracts from "~~/contracts/externalContracts";
 import { useTranslation } from "~~/i18n";
 import scaffoldConfig from "~~/scaffold.config";
@@ -383,6 +384,7 @@ const SlotMachine = (): JSX.Element => {
 
   return (
     <div className="casino-page">
+      <MetaHeader />
       {/* Win celebration overlay */}
       {showWinCelebration && (
         <div className="win-celebration">

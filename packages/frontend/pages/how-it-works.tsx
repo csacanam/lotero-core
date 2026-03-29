@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { MetaHeader } from "~~/components/MetaHeader";
 import { useTranslation } from "~~/i18n";
 
 const HowItWorks = (): JSX.Element => {
@@ -7,6 +8,10 @@ const HowItWorks = (): JSX.Element => {
 
   return (
     <div className="docs-page">
+      <MetaHeader
+        title="How It Works — Lotero"
+        description="Learn how Lotero works: provably fair on-chain slot machine using Chainlink VRF on Base. No gas needed."
+      />
       <div className="docs-card">
         <Link href="/" className="docs-back">
           {t("howItWorks.backToGame")}

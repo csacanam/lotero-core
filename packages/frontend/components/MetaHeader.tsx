@@ -14,8 +14,8 @@ type MetaHeaderProps = {
 const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/` : "/";
 
 export const MetaHeader = ({
-  title = "Lotero",
-  description = "A decentralized slot machine with juicy rewards! 🚀",
+  title = "Lotero — Provably Fair Slot Machine on Base",
+  description = "On-chain slot machine powered by Chainlink VRF. Bet 1 USDC, win up to 30 USDC. No gas needed. Provably fair.",
   image = "thumbnail.png",
   twitterCard = "summary_large_image",
   children,
