@@ -113,10 +113,20 @@ const SlotMachine = (): JSX.Element => {
   const createX402Fetch = useCallback(async () => {
     if (!walletClient || !connectedAddress) throw new Error("Wallet not connected");
 
-    // Dynamic import to avoid blocking SSR
+    // Dynamic import with retry to avoid chunk loading failures
+    const loadWithRetry = async (mod: string, retries = 2): Promise<any> => {
+      for (let i = 0; i <= retries; i++) {
+        try {
+          return await import(/* webpackIgnore: false */ mod as any);
+        } catch {
+          if (i === retries) throw new Error("connection");
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+    };
     const [{ x402Client, wrapFetchWithPayment }, { registerExactEvmScheme }] = await Promise.all([
-      import("@x402/fetch" as any),
-      import("@x402/evm/exact/client" as any),
+      loadWithRetry("@x402/fetch"),
+      loadWithRetry("@x402/evm/exact/client"),
     ]);
 
     const signer = {
@@ -269,7 +279,24 @@ const SlotMachine = (): JSX.Element => {
       resetStates();
       if (error.name === "AbortError") return;
       if (error.message?.includes("rejected") || error.message?.includes("denied")) return;
-      setSpinError(error.message || t("index.spinError"));
+
+      // Map technical errors to user-friendly messages
+      const msg = error.message || "";
+      let userMsg = t("index.spinError");
+      if (msg.includes("connection") || msg.includes("chunk") || msg.includes("fetch")) {
+        userMsg = t("index.connectionError");
+      } else if (msg.includes("Wallet not connected")) {
+        userMsg = t("index.walletNotConnected");
+      } else if (
+        msg === t("index.settlementFailed") ||
+        msg === t("index.contractUnhealthy") ||
+        msg === t("index.executionReverted") ||
+        msg === t("index.needUsdc")
+      ) {
+        userMsg = msg; // Already user-friendly from our error handler above
+      }
+
+      setSpinError(userMsg);
       (document.getElementById("spin_error_modal") as HTMLDialogElement)?.showModal();
     }
   };

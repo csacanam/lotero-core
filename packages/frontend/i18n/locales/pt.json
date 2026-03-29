@@ -42,6 +42,8 @@
   "index.settlementFailed": "O pagamento não pôde ser processado. Tente novamente em instantes.",
   "index.contractUnhealthy": "O jogo está temporariamente indisponível. Tente novamente mais tarde.",
   "index.executionReverted": "A transação falhou on-chain. Tente novamente.",
+  "index.connectionError": "Problema de conexão. Verifique sua internet e tente novamente.",
+  "index.walletNotConnected": "Conecte sua carteira primeiro.",
   "index.walletWarning": "Sua carteira pode exibir um aviso de segurança — isso é normal para pagamentos sem gas via x402.",
 
   "index.referralBanner": "Você foi convidado por {address} — seu amigo ganha 1% das suas apostas como recompensa. Jogue e convide outros também!",
