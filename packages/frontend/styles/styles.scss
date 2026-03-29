@@ -815,7 +815,7 @@ html, body {
       background-position: 0 0;
       background-repeat: repeat-y;
       background-size: $icon_width auto;
-      animation: reelSpin 0.8s linear infinite;
+      animation: reelSpin 1.2s linear infinite;
     }
 
     .reel-stopped-img {
@@ -828,7 +828,7 @@ html, body {
 
   @keyframes reelSpin {
     from { background-position-y: 0; }
-    to { background-position-y: #{-10 * $icon_height}; }
+    to { background-position-y: #{-3 * $icon_height}; }
   }
 }
 

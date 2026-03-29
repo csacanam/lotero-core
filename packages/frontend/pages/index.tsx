@@ -250,19 +250,22 @@ const SlotMachine = (): JSX.Element => {
 
       stopSoundCasino();
 
-      // Reveal results one by one as each reel stops
+      // Reveal results one by one as each reel stops (with stop sound)
       setTimeout(() => {
         setFirstResult(result.n1);
         setReelsStopped(prev => [true, prev[1], prev[2]]);
+        startClickSound();
 
         setTimeout(() => {
           setSecondResult(result.n2);
           setReelsStopped(prev => [prev[0], true, prev[2]]);
+          startClickSound();
 
           setTimeout(() => {
             setThirdResult(result.n3);
             setReelsStopped(prev => [prev[0], prev[1], true]);
             setIsRolling(false);
+            startClickSound();
 
             resetStates();
             refetchBalance();
