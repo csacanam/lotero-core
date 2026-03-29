@@ -249,27 +249,46 @@ const SlotMachine = (): JSX.Element => {
       const result = await pollForResult(requestId);
 
       stopSoundCasino();
-      setFirstResult(result.n1);
-      setSecondResult(result.n2);
-      setThirdResult(result.n3);
-      stopSlotMachine();
 
-      resetStates();
-      refetchBalance();
-      refetchUserInfo();
+      // Reveal results one by one as each reel stops
+      setTimeout(() => {
+        setFirstResult(result.n1);
+        setReelsStopped(prev => [true, prev[1], prev[2]]);
 
-      if (result.hasWon) {
-        const prize =
-          reel[result.n1] === "BTC" ? "30" : reel[result.n1] === "ETH" ? "20" : reel[result.n1] === "BNB" ? "14" : "5";
-        setLastResult({ won: true, prize });
-        setShowWinCelebration(true);
-        startWinSound();
-        setTimeout(() => setShowWinCelebration(false), 4000);
-      } else {
-        setLastResult({ won: false });
-      }
-      // Clear result message after 6 seconds
-      setTimeout(() => setLastResult(null), 6000);
+        setTimeout(() => {
+          setSecondResult(result.n2);
+          setReelsStopped(prev => [prev[0], true, prev[2]]);
+
+          setTimeout(() => {
+            setThirdResult(result.n3);
+            setReelsStopped(prev => [prev[0], prev[1], true]);
+            setIsRolling(false);
+
+            resetStates();
+            refetchBalance();
+            refetchUserInfo();
+
+            // Show result message only after all 3 reels stopped
+            if (result.hasWon) {
+              const prize =
+                reel[result.n1] === "BTC"
+                  ? "30"
+                  : reel[result.n1] === "ETH"
+                  ? "20"
+                  : reel[result.n1] === "BNB"
+                  ? "14"
+                  : "5";
+              setLastResult({ won: true, prize });
+              setShowWinCelebration(true);
+              startWinSound();
+              setTimeout(() => setShowWinCelebration(false), 4000);
+            } else {
+              setLastResult({ won: false });
+            }
+            setTimeout(() => setLastResult(null), 6000);
+          }, 700);
+        }, 700);
+      }, 500);
     } catch (error: any) {
       console.error("Spin error:", error);
       resetStates();
@@ -346,20 +365,6 @@ const SlotMachine = (): JSX.Element => {
   function startSlotMachine() {
     setIsRolling(true);
     setReelsStopped([false, false, false]);
-  }
-
-  function stopSlotMachine() {
-    // Stop reels one by one, left to right (like a real casino)
-    setTimeout(() => {
-      setReelsStopped(prev => [true, prev[1], prev[2]]);
-      setTimeout(() => {
-        setReelsStopped(prev => [prev[0], true, prev[2]]);
-        setTimeout(() => {
-          setReelsStopped(prev => [prev[0], prev[1], true]);
-          setIsRolling(false);
-        }, 700);
-      }, 700);
-    }, 500);
   }
 
   // ─── Sound functions ─────────────────────────────────────────────────────
