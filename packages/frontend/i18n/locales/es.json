@@ -38,6 +38,7 @@
   "index.claimError": "Ocurrió un error al reclamar. Intenta de nuevo.",
   "index.claimErrorTitle": "ERROR AL RECLAMAR",
   "index.spinError": "Ocurrió un error al jugar. Intenta de nuevo.",
+  "index.walletWarning": "Tu wallet puede mostrar una advertencia de seguridad — esto es normal para pagos sin gas vía x402.",
 
   "index.referralBanner": "Fuiste invitado por {address} — tu amigo gana el 1% de tus apuestas como recompensa. ¡Juega y tú también puedes invitar a otros!",
   "index.referralTitle": "PROGRAMA DE REFERIDOS",
@@ -93,6 +94,7 @@
   "howItWorks.noGasPoint1": "Firmas una autorización de transferencia USDC (no una transacción)",
   "howItWorks.noGasPoint2": "El agente Lotero recibe tu pago y ejecuta el giro en tu nombre",
   "howItWorks.noGasPoint3": "Solo necesitas USDC en tu wallet — no se requiere ETH",
+  "howItWorks.noGasPoint4": "Tu wallet puede mostrar una advertencia de seguridad al firmar — esto es normal para pagos sin gas vía x402 y no indica una estafa",
   "howItWorks.betAmount": "Monto de apuesta",
   "howItWorks.serviceFee": "Comisión del servicio",
   "howItWorks.totalPerSpin": "Total por giro",

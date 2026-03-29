@@ -38,6 +38,7 @@
   "index.claimError": "An error occurred while claiming. Please try again.",
   "index.claimErrorTitle": "CLAIM FAILED",
   "index.spinError": "An error occurred while playing. Please try again.",
+  "index.walletWarning": "Your wallet may show a security warning — this is normal for gasless payments via x402.",
 
   "index.referralBanner": "You were invited by {address} — your friend earns 1% of your bets as a reward. Play and you can invite others too!",
   "index.referralTitle": "REFERRAL PROGRAM",
@@ -93,6 +94,7 @@
   "howItWorks.noGasPoint1": "You sign a USDC transfer authorization (not a transaction)",
   "howItWorks.noGasPoint2": "The Lotero agent receives your payment and executes the spin on your behalf",
   "howItWorks.noGasPoint3": "You only need USDC in your wallet — no ETH required",
+  "howItWorks.noGasPoint4": "Your wallet may show a security warning when signing — this is normal for x402 gasless payments and does not indicate a scam",
   "howItWorks.betAmount": "Bet amount",
   "howItWorks.serviceFee": "Service fee",
   "howItWorks.totalPerSpin": "Total per spin",

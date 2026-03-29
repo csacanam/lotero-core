@@ -521,7 +521,7 @@ const SlotMachine = (): JSX.Element => {
               <div className={`reel ${!reelsStopped[0] ? "reel-spinning" : ""}`}>
                 {reelsStopped[0] && (
                   <Image
-                    src={`/logos/${reel[firstResult]}.png`}
+                    src={`/logos/${reel[firstResult].toLowerCase()}.png`}
                     alt={reel[firstResult]}
                     width={79}
                     height={79}
@@ -533,7 +533,7 @@ const SlotMachine = (): JSX.Element => {
               <div className={`reel ${!reelsStopped[1] ? "reel-spinning" : ""}`}>
                 {reelsStopped[1] && (
                   <Image
-                    src={`/logos/${reel[secondResult]}.png`}
+                    src={`/logos/${reel[secondResult].toLowerCase()}.png`}
                     alt={reel[secondResult]}
                     width={79}
                     height={79}
@@ -545,7 +545,7 @@ const SlotMachine = (): JSX.Element => {
               <div className={`reel ${!reelsStopped[2] ? "reel-spinning" : ""}`}>
                 {reelsStopped[2] && (
                   <Image
-                    src={`/logos/${reel[thirdResult]}.png`}
+                    src={`/logos/${reel[thirdResult].toLowerCase()}.png`}
                     alt={reel[thirdResult]}
                     width={79}
                     height={79}
@@ -573,6 +573,7 @@ const SlotMachine = (): JSX.Element => {
               <span className="spin-btn-inner">{t("index.spin")}</span>
             </button>
             <span className="spin-cost">{t("index.spinCost")}</span>
+            <span className="spin-warning">{t("index.walletWarning")}</span>
           </div>
         </div>
 
@@ -643,13 +644,28 @@ const SlotMachine = (): JSX.Element => {
           <h3 className="result-title">{isWin ? t("index.jackpot") : t("index.tryAgain")}</h3>
           <div className="result-reels">
             <div className="result-reel-icon">
-              <Image src={`/logos/${reel[firstResult]}.png`} alt={reel[firstResult]} width={79} height={79} />
+              <Image
+                src={`/logos/${reel[firstResult].toLowerCase()}.png`}
+                alt={reel[firstResult]}
+                width={79}
+                height={79}
+              />
             </div>
             <div className="result-reel-icon">
-              <Image src={`/logos/${reel[secondResult]}.png`} alt={reel[secondResult]} width={79} height={79} />
+              <Image
+                src={`/logos/${reel[secondResult].toLowerCase()}.png`}
+                alt={reel[secondResult]}
+                width={79}
+                height={79}
+              />
             </div>
             <div className="result-reel-icon">
-              <Image src={`/logos/${reel[thirdResult]}.png`} alt={reel[thirdResult]} width={79} height={79} />
+              <Image
+                src={`/logos/${reel[thirdResult].toLowerCase()}.png`}
+                alt={reel[thirdResult]}
+                width={79}
+                height={79}
+              />
             </div>
           </div>
           {isWin && (

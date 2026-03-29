@@ -115,6 +115,7 @@ const HowItWorks = (): JSX.Element => {
             <li>{t("howItWorks.noGasPoint1")}</li>
             <li>{t("howItWorks.noGasPoint2")}</li>
             <li>{t("howItWorks.noGasPoint3")}</li>
+            <li>{t("howItWorks.noGasPoint4")}</li>
           </ul>
           <div className="docs-cost-breakdown">
             <div className="docs-cost-row">

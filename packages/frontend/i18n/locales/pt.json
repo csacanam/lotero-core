@@ -38,6 +38,7 @@
   "index.claimError": "Ocorreu um erro ao resgatar. Tente novamente.",
   "index.claimErrorTitle": "ERRO AO RESGATAR",
   "index.spinError": "Ocorreu um erro ao jogar. Tente novamente.",
+  "index.walletWarning": "Sua carteira pode exibir um aviso de segurança — isso é normal para pagamentos sem gas via x402.",
 
   "index.referralBanner": "Você foi convidado por {address} — seu amigo ganha 1% das suas apostas como recompensa. Jogue e convide outros também!",
   "index.referralTitle": "PROGRAMA DE INDICAÇÃO",
@@ -93,6 +94,7 @@
   "howItWorks.noGasPoint1": "Você assina uma autorização de transferência USDC (não uma transação)",
   "howItWorks.noGasPoint2": "O agente Lotero recebe seu pagamento e executa o giro em seu nome",
   "howItWorks.noGasPoint3": "Você só precisa de USDC na sua carteira — não precisa de ETH",
+  "howItWorks.noGasPoint4": "Sua carteira pode exibir um aviso de segurança ao assinar — isso é normal para pagamentos sem gas via x402 e não indica um golpe",
   "howItWorks.betAmount": "Valor da aposta",
   "howItWorks.serviceFee": "Taxa de serviço",
   "howItWorks.totalPerSpin": "Total por giro",
