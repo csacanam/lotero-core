@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { formatUnits } from "viem";
-import { useAccount, useContractRead, useDisconnect } from "wagmi";
+import { useAccount, useContractRead, useDisconnect, useEnsName } from "wagmi";
 import externalContracts from "~~/contracts/externalContracts";
 import scaffoldConfig from "~~/scaffold.config";
 
@@ -42,6 +42,7 @@ const SlotMachine = (): JSX.Element => {
 
   const { address: connectedAddress, connector } = useAccount();
   const { disconnect } = useDisconnect();
+  const { data: ensName } = useEnsName({ address: connectedAddress, chainId: 1 });
 
   const userInfo = {
     moneyAdded: 0,
@@ -425,12 +426,15 @@ const SlotMachine = (): JSX.Element => {
           <div className="panel-body">
             {connectedAddress ? (
               <div className="wallet-info">
-                <code className="wallet-address">
-                  {connectedAddress.slice(0, 6)}...{connectedAddress.slice(-4)}
-                </code>
-                <button className="wallet-disconnect" onClick={() => disconnect()}>
-                  &times;
-                </button>
+                <span className="wallet-label">Player</span>
+                <div className="wallet-row">
+                  <code className="wallet-address">
+                    {ensName || `${connectedAddress.slice(0, 6)}...${connectedAddress.slice(-4)}`}
+                  </code>
+                  <button className="wallet-disconnect" onClick={() => disconnect()}>
+                    &times;
+                  </button>
+                </div>
               </div>
             ) : (
               <button className="casino-btn casino-btn-connect" onClick={handleConnect}>
@@ -525,7 +529,7 @@ const SlotMachine = (): JSX.Element => {
                 {isPlaying ? "SPINNING..." : isWaitingForResponse ? "WAITING..." : "SPIN"}
               </span>
             </button>
-            <span className="spin-cost">1.1 USDC per spin &middot; No gas needed</span>
+            <span className="spin-cost">1 USDC bet + 0.1 USDC fee &middot; No gas needed</span>
           </div>
         </div>
 
@@ -564,8 +568,9 @@ const SlotMachine = (): JSX.Element => {
                   onClick={handleClaim}
                   disabled={winBalance + referralBalance <= 0}
                 >
-                  CLAIM ALL (0.1 USDC fee)
+                  CLAIM ALL
                 </button>
+                <span className="fee-note">0.1 USDC service fee</span>
 
                 <div className="reward-divider" />
 
