@@ -157,8 +157,11 @@ const resourceServer = new x402ResourceServer(facilitatorClient).register(
 );
 
 // ─── Express app ────────────────────────────────────────────────────────────
+import cors from "cors";
+
 const app = express();
 app.set("trust proxy", 1); // Required when behind reverse proxy (e.g. Digital Ocean)
+app.use(cors()); // Allow frontend to call agent API
 app.use(express.json());
 
 // Paid routes without x402 header: apply stricter rate limit to avoid facilitator spam.

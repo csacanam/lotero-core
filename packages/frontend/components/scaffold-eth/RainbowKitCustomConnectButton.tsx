@@ -6,7 +6,6 @@ import { useDisconnect, useSwitchNetwork } from "wagmi";
 import {
   ArrowLeftOnRectangleIcon,
   ArrowTopRightOnSquareIcon,
-  ArrowsRightLeftIcon,
   CheckCircleIcon,
   ChevronDownIcon,
   DocumentDuplicateIcon,
@@ -21,11 +20,12 @@ import { getBlockExplorerAddressLink, getTargetNetwork } from "~~/utils/scaffold
  */
 export const RainbowKitCustomConnectButton = () => {
   useAutoConnect();
-  const networkColor = useNetworkColor();
+  useNetworkColor();
   const configuredNetwork = getTargetNetwork();
   const { disconnect } = useDisconnect();
   const { switchNetwork } = useSwitchNetwork();
   const [addressCopied, setAddressCopied] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
 
   return (
     <ConnectButton.Custom>
@@ -34,6 +34,15 @@ export const RainbowKitCustomConnectButton = () => {
         const blockExplorerAddressLink = account
           ? getBlockExplorerAddressLink(getTargetNetwork(), account.address)
           : undefined;
+
+        // Auto-switch to correct network
+        const isWrongNetwork = connected && (chain.unsupported || chain.id !== configuredNetwork.id);
+        if (isWrongNetwork && switchNetwork && !isSwitching) {
+          setIsSwitching(true);
+          switchNetwork(configuredNetwork.id);
+          // Reset after a delay to allow retry if user rejects
+          setTimeout(() => setIsSwitching(false), 3000);
+        }
 
         return (
           <>
@@ -62,40 +71,23 @@ export const RainbowKitCustomConnectButton = () => {
                 );
               }
 
-              if (chain.unsupported || chain.id !== configuredNetwork.id) {
+              if (isWrongNetwork) {
                 return (
-                  <div className="dropdown dropdown-end">
-                    <label tabIndex={0} className="btn btn-error btn-sm dropdown-toggle gap-1">
-                      <span>Wrong network</span>
-                      <ChevronDownIcon className="h-6 w-4 ml-2 sm:ml-0" />
-                    </label>
-                    <ul
-                      tabIndex={0}
-                      className="dropdown-content menu p-2 mt-1 shadow-center shadow-accent bg-base-200 rounded-box gap-1"
-                    >
-                      <li>
-                        <button
-                          className="btn-sm !rounded-xl flex py-3 gap-3"
-                          type="button"
-                          onClick={() => switchNetwork?.(configuredNetwork.id)}
-                        >
-                          <ArrowsRightLeftIcon className="h-6 w-4 ml-2 sm:ml-0" />
-                          <span className="whitespace-nowrap">
-                            Switch to <span style={{ color: networkColor }}>{configuredNetwork.name}</span>
-                          </span>
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          className="menu-item text-error btn-sm !rounded-xl flex gap-3 py-3"
-                          type="button"
-                          onClick={() => disconnect()}
-                        >
-                          <ArrowLeftOnRectangleIcon className="h-6 w-4 ml-2 sm:ml-0" /> <span>Disconnect</span>
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
+                  <button
+                    className="btn btn-warning btn-sm"
+                    type="button"
+                    onClick={() => switchNetwork?.(configuredNetwork.id)}
+                    style={{
+                      background: "linear-gradient(to bottom, #ff9800 5%, #e65100 100%)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "5px",
+                      fontWeight: "bold",
+                      padding: "10px 20px",
+                    }}
+                  >
+                    Switch to {configuredNetwork.name}
+                  </button>
                 );
               }
 

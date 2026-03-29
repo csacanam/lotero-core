@@ -19,6 +19,8 @@
     "@rainbow-me/rainbowkit": "1.1.2",
     "@uniswap/sdk-core": "^4.0.1",
     "@uniswap/v2-sdk": "^3.0.1",
+    "@x402/evm": "^2.3.0",
+    "@x402/fetch": "^2.3.0",
     "blo": "^1.0.1",
     "daisyui": "^3.5.1",
     "next": "^13.1.6",
