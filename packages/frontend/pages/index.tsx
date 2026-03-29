@@ -746,7 +746,6 @@ const SlotMachine = (): JSX.Element => {
                   <th>Coin</th>
                   <th>Match</th>
                   <th>Payout</th>
-                  <th>Odds</th>
                 </tr>
               </thead>
               <tbody>
@@ -756,7 +755,6 @@ const SlotMachine = (): JSX.Element => {
                   </td>
                   <td>DOGE x 3</td>
                   <td className="payout-cell">5 USDC</td>
-                  <td>12.5%</td>
                 </tr>
                 <tr>
                   <td>
@@ -764,7 +762,6 @@ const SlotMachine = (): JSX.Element => {
                   </td>
                   <td>BNB x 3</td>
                   <td className="payout-cell">14 USDC</td>
-                  <td>0.8%</td>
                 </tr>
                 <tr>
                   <td>
@@ -772,7 +769,6 @@ const SlotMachine = (): JSX.Element => {
                   </td>
                   <td>ETH x 3</td>
                   <td className="payout-cell">20 USDC</td>
-                  <td>0.8%</td>
                 </tr>
                 <tr className="jackpot-row">
                   <td>
@@ -780,7 +776,6 @@ const SlotMachine = (): JSX.Element => {
                   </td>
                   <td>BTC x 3</td>
                   <td className="payout-cell">30 USDC</td>
-                  <td>0.1%</td>
                 </tr>
               </tbody>
             </table>
@@ -798,11 +793,8 @@ const SlotMachine = (): JSX.Element => {
         <div className="modal-box">
           <h3 className="font-bold text-lg">Game closed!</h3>
           <p className="py-4">
-            The contract does not have enough funds to pay out in case you win. Please contact support.
+            The contract does not have enough funds to pay out in case you win. Please try again later.
           </p>
-          <a className="casino-btn casino-btn-secondary" href="https://t.me/+4a-Lc7yiSJsxYjEx">
-            Support
-          </a>
           <div className="modal-action">
             <form method="dialog">
               <button className="casino-btn casino-btn-secondary">CLOSE</button>

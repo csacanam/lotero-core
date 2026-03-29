@@ -107,6 +107,20 @@ html, body {
   .footer-sep {
     color: #333;
   }
+
+  .footer-links {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .footer-disclaimer {
+    margin: 6px 0 0;
+    font-size: 10px;
+    color: #444;
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
 }
 
 // ─── Neon Header ────────────────────────────────────────────────────────────
