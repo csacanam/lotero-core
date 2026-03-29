@@ -35,6 +35,7 @@ const SlotMachine = (): JSX.Element => {
   const [claimResult, setClaimResult] = useState<{ status: "success" | "error" | "nothing"; amount?: string } | null>(
     null,
   );
+  const [spinError, setSpinError] = useState<string | null>(null);
 
   // Check localStorage for disclaimer acceptance on mount
   useEffect(() => {
@@ -200,7 +201,8 @@ const SlotMachine = (): JSX.Element => {
     if (isPlaying || isWaitingForResponse) return;
 
     if (!tokenUserBalance || tokenUserBalance < BigInt(1100000)) {
-      alert(t("index.needUsdc"));
+      setSpinError(t("index.needUsdc"));
+      (document.getElementById("spin_error_modal") as HTMLDialogElement)?.showModal();
       return;
     }
 
@@ -221,11 +223,18 @@ const SlotMachine = (): JSX.Element => {
 
       if (!res.ok) {
         const errBody = await res.text().catch(() => "");
-        console.error("[x402] Final response status:", res.status);
-        console.error("[x402] Final response body:", errBody);
-        console.error("[x402] Response headers:");
-        res.headers.forEach((v: string, k: string) => console.error(`  ${k}: ${v}`));
-        throw new Error(`Agent returned ${res.status}: ${errBody}`);
+        console.error("[x402] Response:", res.status, errBody);
+        // Parse error for user-friendly message
+        let userMsg = t("index.spinError");
+        try {
+          const parsed = JSON.parse(errBody);
+          if (parsed.error?.includes("Settlement failed")) userMsg = t("index.settlementFailed");
+          else if (parsed.error?.includes("Contract unhealthy")) userMsg = t("index.contractUnhealthy");
+          else if (parsed.details) userMsg = parsed.details;
+        } catch {
+          if (errBody.includes("execution reverted")) userMsg = t("index.executionReverted");
+        }
+        throw new Error(userMsg);
       }
 
       const { requestId } = await res.json();
@@ -260,7 +269,8 @@ const SlotMachine = (): JSX.Element => {
       resetStates();
       if (error.name === "AbortError") return;
       if (error.message?.includes("rejected") || error.message?.includes("denied")) return;
-      alert(error.message || t("index.spinError"));
+      setSpinError(error.message || t("index.spinError"));
+      (document.getElementById("spin_error_modal") as HTMLDialogElement)?.showModal();
     }
   };
 
@@ -850,6 +860,19 @@ const SlotMachine = (): JSX.Element => {
         <div className="modal-box">
           <h3 className="font-bold text-lg">{t("index.gameClosed")}</h3>
           <p className="py-4">{t("index.gameClosedMsg")}</p>
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="casino-btn casino-btn-secondary">{t("common.close")}</button>
+            </form>
+          </div>
+        </div>
+      </dialog>
+
+      {/* Spin Error Modal */}
+      <dialog id="spin_error_modal" className="modal">
+        <div className="modal-box result-modal modal-lose">
+          <h3 className="result-title">{t("index.spinErrorTitle")}</h3>
+          <p className="claim-modal-msg">{spinError}</p>
           <div className="modal-action">
             <form method="dialog">
               <button className="casino-btn casino-btn-secondary">{t("common.close")}</button>

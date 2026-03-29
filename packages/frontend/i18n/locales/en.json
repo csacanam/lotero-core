@@ -38,6 +38,10 @@
   "index.claimError": "An error occurred while claiming. Please try again.",
   "index.claimErrorTitle": "CLAIM FAILED",
   "index.spinError": "An error occurred while playing. Please try again.",
+  "index.spinErrorTitle": "COULD NOT SPIN",
+  "index.settlementFailed": "Payment could not be processed. Please try again in a moment.",
+  "index.contractUnhealthy": "The game is temporarily unavailable. Please try again later.",
+  "index.executionReverted": "Transaction failed on-chain. Please try again.",
   "index.walletWarning": "Your wallet may show a security warning — this is normal for gasless payments via x402.",
 
   "index.referralBanner": "You were invited by {address} — your friend earns 1% of your bets as a reward. Play and you can invite others too!",
