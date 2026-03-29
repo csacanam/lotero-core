@@ -432,14 +432,10 @@ const SlotMachine = (): JSX.Element => {
             <button
               className="casino-btn casino-btn-secondary"
               onClick={() => {
-                if (connectedAddress) {
-                  (document.getElementById("paytable_modal") as HTMLDialogElement)?.showModal();
-                } else {
-                  handleConnect();
-                }
+                (document.getElementById("paytable_modal") as HTMLDialogElement)?.showModal();
               }}
             >
-              {connectedAddress ? "PAY TABLE" : "CONNECT WALLET"}
+              PAY TABLE
             </button>
           </div>
         </div>
@@ -511,16 +507,10 @@ const SlotMachine = (): JSX.Element => {
               }
             >
               <span className="spin-btn-inner">
-                {isPlaying
-                  ? "SPINNING..."
-                  : isWaitingForResponse
-                  ? "WAITING..."
-                  : connectedAddress
-                  ? "SPIN"
-                  : "CONNECT"}
+                {isPlaying ? "SPINNING..." : isWaitingForResponse ? "WAITING..." : "SPIN"}
               </span>
             </button>
-            {connectedAddress && <span className="spin-cost">1.1 USDC per spin &middot; No gas needed</span>}
+            <span className="spin-cost">1.1 USDC per spin &middot; No gas needed</span>
           </div>
         </div>
 

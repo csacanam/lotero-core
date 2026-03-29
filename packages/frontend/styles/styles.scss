@@ -60,18 +60,52 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
+  padding: 20px 20px 0;
   max-width: 1300px;
   width: 100%;
   margin: 0 auto;
   position: relative;
   z-index: 1;
-  flex: 1;
   box-sizing: border-box;
-  min-height: calc(100vh - 80px);
 
   @media (max-width: 480px) {
-    padding: 12px 8px;
+    padding: 12px 8px 0;
+  }
+}
+
+// ─── Footer ─────────────────────────────────────────────────────────────────
+.casino-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  font-size: 12px;
+  color: #555;
+  position: relative;
+  z-index: 1;
+
+  a {
+    color: #777;
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $casino-gold;
+    }
+  }
+
+  .footer-text a {
+    color: $casino-gold;
+    font-weight: 600;
+
+    &:hover {
+      text-shadow: 0 0 8px rgba($casino-gold, 0.4);
+    }
+  }
+
+  .footer-sep {
+    color: #333;
   }
 }
 
