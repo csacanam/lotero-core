@@ -461,10 +461,9 @@ html, body {
   display: block;
   text-align: center;
   font-size: 11px;
-  color: #999;
+  color: rgba($casino-gold, 0.5);
   margin-top: 6px;
   letter-spacing: 0.5px;
-  font-style: italic;
 }
 
 .casino-btn-connect {
@@ -863,6 +862,41 @@ html, body {
 
   &.left-arrow { left: 4px; }
   &.right-arrow { right: 4px; }
+}
+
+// Inline result message
+.result-inline {
+  text-align: center;
+  padding: 10px 20px;
+  margin: 12px 24px 0;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 2px;
+  animation: resultFadeIn 0.4s ease-out;
+
+  &.result-win {
+    color: $casino-gold;
+    background: rgba($casino-gold, 0.1);
+    border: 1px solid rgba($casino-gold, 0.3);
+    text-shadow: 0 0 10px rgba($casino-gold, 0.4);
+  }
+
+  &.result-lose {
+    color: #999;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  @media (max-width: 480px) {
+    margin: 10px 14px 0;
+    font-size: 14px;
+  }
+}
+
+@keyframes resultFadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 // Glass reflection overlay

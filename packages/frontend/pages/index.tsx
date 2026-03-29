@@ -36,6 +36,7 @@ const SlotMachine = (): JSX.Element => {
     null,
   );
   const [spinError, setSpinError] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<{ won: boolean; prize?: string } | null>(null);
 
   // Check localStorage for disclaimer acceptance on mount
   useEffect(() => {
@@ -113,20 +114,10 @@ const SlotMachine = (): JSX.Element => {
   const createX402Fetch = useCallback(async () => {
     if (!walletClient || !connectedAddress) throw new Error("Wallet not connected");
 
-    // Dynamic import with retry to avoid chunk loading failures
-    const loadWithRetry = async (mod: string, retries = 2): Promise<any> => {
-      for (let i = 0; i <= retries; i++) {
-        try {
-          return await import(/* webpackIgnore: false */ mod as any);
-        } catch {
-          if (i === retries) throw new Error("connection");
-          await new Promise(r => setTimeout(r, 1000));
-        }
-      }
-    };
+    // Dynamic import to avoid blocking SSR
     const [{ x402Client, wrapFetchWithPayment }, { registerExactEvmScheme }] = await Promise.all([
-      loadWithRetry("@x402/fetch"),
-      loadWithRetry("@x402/evm/exact/client"),
+      import("@x402/fetch" as any),
+      import("@x402/evm/exact/client" as any),
     ]);
 
     const signer = {
@@ -218,6 +209,7 @@ const SlotMachine = (): JSX.Element => {
 
     try {
       setIsPlaying(true);
+      setLastResult(null);
       startClickSound();
 
       const fetchWithPayment = await createX402Fetch();
@@ -266,14 +258,18 @@ const SlotMachine = (): JSX.Element => {
       refetchBalance();
       refetchUserInfo();
 
-      const modal = document.getElementById("result_modal") as HTMLDialogElement | null;
-      modal?.showModal();
-
       if (result.hasWon) {
+        const prize =
+          reel[result.n1] === "BTC" ? "30" : reel[result.n1] === "ETH" ? "20" : reel[result.n1] === "BNB" ? "14" : "5";
+        setLastResult({ won: true, prize });
         setShowWinCelebration(true);
         startWinSound();
         setTimeout(() => setShowWinCelebration(false), 4000);
+      } else {
+        setLastResult({ won: false });
       }
+      // Clear result message after 6 seconds
+      setTimeout(() => setLastResult(null), 6000);
     } catch (error: any) {
       console.error("Spin error:", error);
       resetStates();
@@ -417,7 +413,6 @@ const SlotMachine = (): JSX.Element => {
 
   const winBalance = userInfo.moneyEarned - userInfo.moneyClaimed;
   const referralBalance = userInfo.earnedByReferrals - userInfo.claimedByReferrals;
-  const isWin = reel[firstResult] === reel[secondResult] && reel[secondResult] === reel[thirdResult];
 
   return (
     <div className="casino-page">
@@ -598,6 +593,13 @@ const SlotMachine = (): JSX.Element => {
             <div className="glass-overlay" />
           </div>
 
+          {/* Result message - inline, no modal */}
+          {lastResult && (
+            <div className={`result-inline ${lastResult.won ? "result-win" : "result-lose"}`}>
+              {lastResult.won ? `${t("index.youWon")} ${lastResult.prize} USDC!` : t("index.tryAgain")}
+            </div>
+          )}
+
           {/* Spin button area */}
           <div className="spin-area">
             <button
@@ -676,59 +678,6 @@ const SlotMachine = (): JSX.Element => {
       </div>
 
       {/* ─── Modals ──────────────────────────────────────────────────────── */}
-
-      {/* Result Modal */}
-      <dialog id="result_modal" className="modal">
-        <div className={`modal-box result-modal ${isWin ? "modal-win" : "modal-lose"}`}>
-          <h3 className="result-title">{isWin ? t("index.jackpot") : t("index.tryAgain")}</h3>
-          <div className="result-reels">
-            <div className="result-reel-icon">
-              <Image
-                src={`/logos/${reel[firstResult].toLowerCase()}.png`}
-                alt={reel[firstResult]}
-                width={79}
-                height={79}
-              />
-            </div>
-            <div className="result-reel-icon">
-              <Image
-                src={`/logos/${reel[secondResult].toLowerCase()}.png`}
-                alt={reel[secondResult]}
-                width={79}
-                height={79}
-              />
-            </div>
-            <div className="result-reel-icon">
-              <Image
-                src={`/logos/${reel[thirdResult].toLowerCase()}.png`}
-                alt={reel[thirdResult]}
-                width={79}
-                height={79}
-              />
-            </div>
-          </div>
-          {isWin && (
-            <div className="win-prize-display">
-              <span className="win-amount-label">{t("index.youWon")}</span>
-              <span className="win-amount">
-                {reel[firstResult] === "BTC"
-                  ? "30"
-                  : reel[firstResult] === "ETH"
-                  ? "20"
-                  : reel[firstResult] === "BNB"
-                  ? "14"
-                  : "5"}{" "}
-                USDC
-              </span>
-            </div>
-          )}
-          <div className="modal-action">
-            <form method="dialog">
-              <button className="casino-btn casino-btn-secondary">{t("common.close")}</button>
-            </form>
-          </div>
-        </div>
-      </dialog>
 
       {/* Referral Modal */}
       <dialog id="referral_modal" className="modal">
