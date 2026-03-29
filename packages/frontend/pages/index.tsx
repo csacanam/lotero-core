@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { formatUnits } from "viem";
-import { useAccount, useContractRead, useDisconnect, useEnsName } from "wagmi";
+import { useAccount, useContractRead, useDisconnect, useEnsName, useWalletClient } from "wagmi";
 import externalContracts from "~~/contracts/externalContracts";
 import scaffoldConfig from "~~/scaffold.config";
 
@@ -14,17 +15,17 @@ const POLL_INTERVAL_MS = 2500;
 const POLL_MAX_ATTEMPTS = 60;
 
 const SlotMachine = (): JSX.Element => {
+  // Reel array: maps VRF index (0-9) to symbol name
   const reel = ["DOGE", "DOGE", "DOGE", "DOGE", "DOGE", "BNB", "BNB", "ETH", "ETH", "BTC"];
 
   const [firstResult, setFirstResult] = useState<number>(0);
   const [secondResult, setSecondResult] = useState<number>(0);
   const [thirdResult, setThirdResult] = useState<number>(0);
 
-  const num_icons = 10;
-  const icon_height = 79;
-  const [isRolling, setIsRolling] = useState(false);
+  const [, setIsRolling] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [reelsStopped, setReelsStopped] = useState<[boolean, boolean, boolean]>([true, true, true]);
   const [showWinCelebration, setShowWinCelebration] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
@@ -39,7 +40,6 @@ const SlotMachine = (): JSX.Element => {
     localStorage.setItem("lotero_disclaimer_accepted", "true");
     setDisclaimerAccepted(true);
   };
-  const rollIntervalRef = useRef<NodeJS.Timer | undefined>(undefined);
   const casinoSoundRef = useRef<HTMLAudioElement | null>(null);
   const pollAbortRef = useRef<AbortController | null>(null);
 
@@ -53,9 +53,10 @@ const SlotMachine = (): JSX.Element => {
   const mockUSDTContract = externalContracts[chainId][0].contracts.USDT;
   const slotMachineContract = externalContracts[chainId][0].contracts.SlotMachine;
 
-  const { address: connectedAddress, connector } = useAccount();
+  const { address: connectedAddress } = useAccount();
   const { disconnect } = useDisconnect();
   const { data: ensName } = useEnsName({ address: connectedAddress, chainId: 1 });
+  const { data: walletClient } = useWalletClient();
 
   const userInfo = {
     moneyAdded: 0,
@@ -72,6 +73,7 @@ const SlotMachine = (): JSX.Element => {
     abi: mockUSDTContract.abi,
     functionName: "balanceOf",
     args: [connectedAddress as string],
+    enabled: !!connectedAddress,
   });
 
   const { data: userInfoTx, refetch: refetchUserInfo } = useContractRead({
@@ -79,6 +81,7 @@ const SlotMachine = (): JSX.Element => {
     abi: slotMachineContract.abi,
     functionName: "infoPerUser",
     args: [connectedAddress as string],
+    enabled: !!connectedAddress,
   });
 
   if (userInfoTx) {
@@ -100,8 +103,7 @@ const SlotMachine = (): JSX.Element => {
 
   // ─── x402 signer creation ────────────────────────────────────────────────
   const createX402Fetch = useCallback(async () => {
-    if (!connector || !connectedAddress) throw new Error("Wallet not connected");
-    const walletProvider = await connector.getProvider();
+    if (!walletClient || !connectedAddress) throw new Error("Wallet not connected");
 
     // Dynamic import to avoid blocking SSR
     const [{ x402Client, wrapFetchWithPayment }, { registerExactEvmScheme }] = await Promise.all([
@@ -117,29 +119,29 @@ const SlotMachine = (): JSX.Element => {
         primaryType: string;
         message: Record<string, unknown>;
       }): Promise<`0x${string}`> => {
-        const typesWithoutDomain = { ...params.types };
-        delete typesWithoutDomain["EIP712Domain"];
-        const typedData = {
-          domain: params.domain,
-          types: typesWithoutDomain,
-          primaryType: params.primaryType,
-          message: params.message,
-        };
-        const signature = await (walletProvider as any).request({
-          method: "eth_signTypedData_v4",
-          params: [
-            connectedAddress,
-            JSON.stringify(typedData, (_key, value) => (typeof value === "bigint" ? value.toString() : value)),
-          ],
-        });
-        return signature as `0x${string}`;
+        console.log("[x402] signTypedData called");
+        try {
+          // Use wagmi walletClient which handles EIP-712 serialization correctly
+          const signature = await walletClient.signTypedData({
+            account: walletClient.account,
+            domain: params.domain as any,
+            types: params.types as any,
+            primaryType: params.primaryType as any,
+            message: params.message as any,
+          });
+          console.log("[x402] Signature obtained:", signature);
+          return signature;
+        } catch (err: any) {
+          console.error("[x402] signTypedData FAILED:", err.message);
+          throw err;
+        }
       },
     };
 
     const client = new x402Client();
     registerExactEvmScheme(client, { signer });
     return wrapFetchWithPayment(fetch, client);
-  }, [connector, connectedAddress]);
+  }, [walletClient, connectedAddress]);
 
   // ─── Reset states ─────────────────────────────────────────────────────────
   const resetStates = () => {
@@ -147,10 +149,6 @@ const SlotMachine = (): JSX.Element => {
     setIsRolling(false);
     setIsWaitingForResponse(false);
     stopSoundCasino();
-    if (rollIntervalRef.current) {
-      clearInterval(rollIntervalRef.current);
-      rollIntervalRef.current = undefined;
-    }
   };
 
   // ─── Poll for round result ───────────────────────────────────────────────
@@ -215,8 +213,12 @@ const SlotMachine = (): JSX.Element => {
       });
 
       if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody.error || `Agent returned ${res.status}`);
+        const errBody = await res.text().catch(() => "");
+        console.error("[x402] Final response status:", res.status);
+        console.error("[x402] Final response body:", errBody);
+        console.error("[x402] Response headers:");
+        res.headers.forEach((v: string, k: string) => console.error(`  ${k}: ${v}`));
+        throw new Error(`Agent returned ${res.status}: ${errBody}`);
       }
 
       const { requestId } = await res.json();
@@ -232,7 +234,7 @@ const SlotMachine = (): JSX.Element => {
       setFirstResult(result.n1);
       setSecondResult(result.n2);
       setThirdResult(result.n3);
-      stopSlotMachine(result.n1, result.n2, result.n3);
+      stopSlotMachine();
 
       resetStates();
       refetchBalance();
@@ -291,43 +293,23 @@ const SlotMachine = (): JSX.Element => {
   };
 
   // ─── Slot machine animation ──────────────────────────────────────────────
-  function rollReel(value: Element) {
-    const el = value as HTMLElement;
-    const pos = Math.floor(Math.random() * num_icons) * icon_height * -1;
-    el.style.backgroundPositionY = `${pos}px`;
-  }
-
-  function rollAllReels() {
-    document.querySelectorAll(".slots .reel").forEach(rollReel);
-  }
-
   function startSlotMachine() {
-    if (!isRolling) {
-      setIsRolling(true);
-      rollAllReels();
-      const interval = setInterval(rollAllReels, 50);
-      rollIntervalRef.current = interval;
-    }
+    setIsRolling(true);
+    setReelsStopped([false, false, false]);
   }
 
-  function stopSlotMachine(s1: number, s2: number, s3: number) {
-    setIsRolling(false);
-    const reels = document.querySelectorAll(".slots .reel");
-
+  function stopSlotMachine() {
+    // Stop reels sequentially with delays
     setTimeout(() => {
-      (reels[0] as HTMLElement).style.backgroundPositionY = `${s1 * icon_height}px`;
+      setReelsStopped(prev => [true, prev[1], prev[2]]);
       setTimeout(() => {
-        (reels[1] as HTMLElement).style.backgroundPositionY = `${s2 * icon_height}px`;
+        setReelsStopped(prev => [prev[0], true, prev[2]]);
         setTimeout(() => {
-          (reels[2] as HTMLElement).style.backgroundPositionY = `${s3 * icon_height}px`;
-        }, 300);
-      }, 300);
-    }, 300);
-
-    if (rollIntervalRef.current) {
-      clearInterval(rollIntervalRef.current);
-      rollIntervalRef.current = undefined;
-    }
+          setReelsStopped(prev => [prev[0], prev[1], true]);
+          setIsRolling(false);
+        }, 400);
+      }, 400);
+    }, 400);
   }
 
   // ─── Sound functions ─────────────────────────────────────────────────────
@@ -425,14 +407,9 @@ const SlotMachine = (): JSX.Element => {
       <div className="neon-header">
         <h1 className="neon-title">LOTERO</h1>
         <p className="neon-subtitle">PROVABLY FAIR SLOT MACHINE ON BASE</p>
-        <a
-          href="https://camilos-personal-organization.gitbook.io/lotero/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="how-it-works-link"
-        >
+        <Link href="/how-it-works" className="how-it-works-link">
           How it works
-        </a>
+        </Link>
       </div>
 
       {/* Main casino layout */}
@@ -527,11 +504,41 @@ const SlotMachine = (): JSX.Element => {
             <div className="win-line" />
 
             <div className="slots">
-              <div className="reel"></div>
+              <div className={`reel ${!reelsStopped[0] ? "reel-spinning" : ""}`}>
+                {reelsStopped[0] && (
+                  <Image
+                    src={`/logos/${reel[firstResult]}.png`}
+                    alt={reel[firstResult]}
+                    width={79}
+                    height={79}
+                    className="reel-stopped-img"
+                  />
+                )}
+              </div>
               <div className="reel-divider" />
-              <div className="reel"></div>
+              <div className={`reel ${!reelsStopped[1] ? "reel-spinning" : ""}`}>
+                {reelsStopped[1] && (
+                  <Image
+                    src={`/logos/${reel[secondResult]}.png`}
+                    alt={reel[secondResult]}
+                    width={79}
+                    height={79}
+                    className="reel-stopped-img"
+                  />
+                )}
+              </div>
               <div className="reel-divider" />
-              <div className="reel"></div>
+              <div className={`reel ${!reelsStopped[2] ? "reel-spinning" : ""}`}>
+                {reelsStopped[2] && (
+                  <Image
+                    src={`/logos/${reel[thirdResult]}.png`}
+                    alt={reel[thirdResult]}
+                    width={79}
+                    height={79}
+                    className="reel-stopped-img"
+                  />
+                )}
+              </div>
             </div>
 
             {/* Glass reflection overlay */}
@@ -549,9 +556,7 @@ const SlotMachine = (): JSX.Element => {
                 (!!connectedAddress && (!tokenUserBalance || tokenUserBalance < BigInt(1100000)))
               }
             >
-              <span className="spin-btn-inner">
-                {isPlaying ? "SPINNING..." : isWaitingForResponse ? "WAITING..." : "SPIN"}
-              </span>
+              <span className="spin-btn-inner">SPIN</span>
             </button>
             <span className="spin-cost">1 USDC bet + 0.1 USDC fee &middot; No gas needed</span>
           </div>
