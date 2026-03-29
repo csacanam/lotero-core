@@ -114,7 +114,10 @@ const SlotMachine = (): JSX.Element => {
         };
         const signature = await (walletProvider as any).request({
           method: "eth_signTypedData_v4",
-          params: [connectedAddress, JSON.stringify(typedData)],
+          params: [
+            connectedAddress,
+            JSON.stringify(typedData, (_key, value) => (typeof value === "bigint" ? value.toString() : value)),
+          ],
         });
         return signature as `0x${string}`;
       },
