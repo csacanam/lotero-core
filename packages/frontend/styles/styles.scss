@@ -461,7 +461,7 @@ html, body {
   display: block;
   text-align: center;
   font-size: 11px;
-  color: rgba($casino-gold, 0.5);
+  color: rgba($casino-gold, 0.7);
   margin-top: 6px;
   letter-spacing: 0.5px;
 }
@@ -815,7 +815,7 @@ html, body {
       background-position: 0 0;
       background-repeat: repeat-y;
       background-size: $icon_width auto;
-      animation: reelSpin 0.15s linear infinite;
+      animation: reelSpin 0.3s linear infinite;
     }
 
     .reel-stopped-img {

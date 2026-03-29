@@ -349,7 +349,7 @@ const SlotMachine = (): JSX.Element => {
   }
 
   function stopSlotMachine() {
-    // Stop reels sequentially with delays
+    // Stop reels one by one, left to right (like a real casino)
     setTimeout(() => {
       setReelsStopped(prev => [true, prev[1], prev[2]]);
       setTimeout(() => {
@@ -357,9 +357,9 @@ const SlotMachine = (): JSX.Element => {
         setTimeout(() => {
           setReelsStopped(prev => [prev[0], prev[1], true]);
           setIsRolling(false);
-        }, 400);
-      }, 400);
-    }, 400);
+        }, 700);
+      }, 700);
+    }, 500);
   }
 
   // ─── Sound functions ─────────────────────────────────────────────────────
