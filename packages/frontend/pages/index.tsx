@@ -6,6 +6,7 @@ import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { formatUnits } from "viem";
 import { useAccount, useContractRead, useDisconnect, useEnsName, useWalletClient } from "wagmi";
 import externalContracts from "~~/contracts/externalContracts";
+import { useTranslation } from "~~/i18n";
 import scaffoldConfig from "~~/scaffold.config";
 
 // x402 loaded dynamically to avoid blocking SSR/page compilation
@@ -16,6 +17,7 @@ const POLL_MAX_ATTEMPTS = 60;
 
 const SlotMachine = (): JSX.Element => {
   // Reel array: maps VRF index (0-9) to symbol name
+  const { t } = useTranslation();
   const reel = ["DOGE", "DOGE", "DOGE", "DOGE", "DOGE", "BNB", "BNB", "ETH", "ETH", "BTC"];
 
   const [firstResult, setFirstResult] = useState<number>(0);
@@ -193,7 +195,7 @@ const SlotMachine = (): JSX.Element => {
     if (isPlaying || isWaitingForResponse) return;
 
     if (!tokenUserBalance || tokenUserBalance < BigInt(1100000)) {
-      alert("You need at least 1.1 USDC to play (1 USDC bet + 0.1 USDC agent fee).");
+      alert(t("index.needUsdc"));
       return;
     }
 
@@ -253,7 +255,7 @@ const SlotMachine = (): JSX.Element => {
       resetStates();
       if (error.name === "AbortError") return;
       if (error.message?.includes("rejected") || error.message?.includes("denied")) return;
-      alert(error.message || "An error occurred while playing. Please try again.");
+      alert(error.message || t("index.spinError"));
     }
   };
 
@@ -280,15 +282,15 @@ const SlotMachine = (): JSX.Element => {
       await res.json();
       refetchBalance();
       refetchUserInfo();
-      alert("Claim successful!");
+      alert(t("index.claimSuccess"));
     } catch (error: any) {
       console.error("Claim error:", error);
       if (error.message?.includes("rejected") || error.message?.includes("denied")) return;
       if (error.message?.includes("Nothing to claim")) {
-        alert("Nothing to claim. You have already claimed all your earnings.");
+        alert(t("index.nothingToClaim"));
         return;
       }
-      alert(error.message || "An error occurred while claiming. Please try again.");
+      alert(error.message || t("index.claimError"));
     }
   };
 
@@ -391,11 +393,9 @@ const SlotMachine = (): JSX.Element => {
       {isReferred && !referralBannerDismissed && (
         <div className="referral-banner">
           <span className="referral-banner-text">
-            You were invited by{" "}
-            <code>
-              {referralFromUrl.slice(0, 6)}...{referralFromUrl.slice(-4)}
-            </code>{" "}
-            &mdash; your friend earns 1% of your bets as a reward. Play and you can invite others too!
+            {t("index.referralBanner", {
+              address: `${referralFromUrl.slice(0, 6)}...${referralFromUrl.slice(-4)}`,
+            })}
           </span>
           <button className="referral-banner-close" onClick={() => setReferralBannerDismissed(true)}>
             &times;
@@ -406,9 +406,9 @@ const SlotMachine = (): JSX.Element => {
       {/* Neon title */}
       <div className="neon-header">
         <h1 className="neon-title">LOTERO</h1>
-        <p className="neon-subtitle">PROVABLY FAIR SLOT MACHINE ON BASE</p>
+        <p className="neon-subtitle">{t("index.subtitle")}</p>
         <Link href="/how-it-works" className="how-it-works-link">
-          How it works
+          {t("index.howItWorks")}
         </Link>
       </div>
 
@@ -422,12 +422,12 @@ const SlotMachine = (): JSX.Element => {
                 <span key={i} className="panel-led" style={{ animationDelay: `${i * 0.2}s` }} />
               ))}
             </div>
-            <h2>BALANCE</h2>
+            <h2>{t("common.balance")}</h2>
           </div>
           <div className="panel-body">
             {connectedAddress ? (
               <div className="wallet-info">
-                <span className="wallet-label">Player</span>
+                <span className="wallet-label">{t("common.player")}</span>
                 <div className="wallet-row">
                   <code className="wallet-address">
                     {ensName || `${connectedAddress.slice(0, 6)}...${connectedAddress.slice(-4)}`}
@@ -439,7 +439,7 @@ const SlotMachine = (): JSX.Element => {
               </div>
             ) : (
               <button className="casino-btn casino-btn-connect" onClick={handleConnect}>
-                CONNECT WALLET
+                {t("common.connectWallet")}
               </button>
             )}
             <div className="balance-display">
@@ -455,7 +455,7 @@ const SlotMachine = (): JSX.Element => {
                 (document.getElementById("paytable_modal") as HTMLDialogElement)?.showModal();
               }}
             >
-              PAY TABLE
+              {t("index.payTable")}
             </button>
           </div>
         </div>
@@ -487,11 +487,11 @@ const SlotMachine = (): JSX.Element => {
           {/* Cabinet top - mini info */}
           <div className="cabinet-top">
             <div className="cabinet-display">
-              <span className="display-label">BET</span>
+              <span className="display-label">{t("index.bet")}</span>
               <span className="display-value">1 USDC</span>
             </div>
             <div className="cabinet-display">
-              <span className="display-label">MAX WIN</span>
+              <span className="display-label">{t("index.maxWin")}</span>
               <span className="display-value">30 USDC</span>
             </div>
           </div>
@@ -556,9 +556,9 @@ const SlotMachine = (): JSX.Element => {
                 (!!connectedAddress && (!tokenUserBalance || tokenUserBalance < BigInt(1100000)))
               }
             >
-              <span className="spin-btn-inner">SPIN</span>
+              <span className="spin-btn-inner">{t("index.spin")}</span>
             </button>
-            <span className="spin-cost">1 USDC bet + 0.1 USDC fee &middot; No gas needed</span>
+            <span className="spin-cost">{t("index.spinCost")}</span>
           </div>
         </div>
 
@@ -570,25 +570,25 @@ const SlotMachine = (): JSX.Element => {
                 <span key={i} className="panel-led" style={{ animationDelay: `${i * 0.2}s` }} />
               ))}
             </div>
-            <h2>REWARDS</h2>
+            <h2>{t("common.rewards")}</h2>
           </div>
           <div className="panel-body">
             {connectedAddress ? (
               <>
                 <div className="reward-row">
-                  <span className="reward-label">Wins</span>
+                  <span className="reward-label">{t("index.wins")}</span>
                   <span className="reward-amount">{formatUnits(BigInt(winBalance), 6)} USDC</span>
                 </div>
 
                 <div className="reward-row">
-                  <span className="reward-label">Referrals</span>
+                  <span className="reward-label">{t("index.referrals")}</span>
                   <span className="reward-amount">{formatUnits(BigInt(referralBalance), 6)} USDC</span>
                 </div>
 
                 <div className="reward-divider" />
 
                 <div className="reward-row reward-row-total">
-                  <span className="reward-label">Total</span>
+                  <span className="reward-label">{t("index.total")}</span>
                   <span className="reward-amount">{formatUnits(BigInt(winBalance + referralBalance), 6)} USDC</span>
                 </div>
 
@@ -597,9 +597,9 @@ const SlotMachine = (): JSX.Element => {
                   onClick={handleClaim}
                   disabled={winBalance + referralBalance <= 0}
                 >
-                  CLAIM ALL
+                  {t("index.claimAll")}
                 </button>
-                <span className="fee-note">0.1 USDC service fee</span>
+                <span className="fee-note">{t("index.serviceFee")}</span>
 
                 <div className="reward-divider" />
 
@@ -611,11 +611,11 @@ const SlotMachine = (): JSX.Element => {
                     (document.getElementById("referral_modal") as HTMLDialogElement)?.showModal();
                   }}
                 >
-                  INVITE &amp; EARN
+                  {t("index.inviteEarn")}
                 </a>
               </>
             ) : (
-              <p className="panel-placeholder">Connect wallet to see rewards</p>
+              <p className="panel-placeholder">{t("index.connectToSeeRewards")}</p>
             )}
           </div>
         </div>
@@ -626,7 +626,7 @@ const SlotMachine = (): JSX.Element => {
       {/* Result Modal */}
       <dialog id="result_modal" className="modal">
         <div className={`modal-box result-modal ${isWin ? "modal-win" : "modal-lose"}`}>
-          <h3 className="result-title">{isWin ? "JACKPOT!" : "TRY AGAIN!"}</h3>
+          <h3 className="result-title">{isWin ? t("index.jackpot") : t("index.tryAgain")}</h3>
           <div className="result-reels">
             <div className="result-reel-icon">
               <Image src={`/logos/${reel[firstResult]}.png`} alt={reel[firstResult]} width={79} height={79} />
@@ -640,7 +640,7 @@ const SlotMachine = (): JSX.Element => {
           </div>
           {isWin && (
             <div className="win-prize-display">
-              <span className="win-amount-label">YOU WON</span>
+              <span className="win-amount-label">{t("index.youWon")}</span>
               <span className="win-amount">
                 {reel[firstResult] === "BTC"
                   ? "30"
@@ -655,7 +655,7 @@ const SlotMachine = (): JSX.Element => {
           )}
           <div className="modal-action">
             <form method="dialog">
-              <button className="casino-btn casino-btn-secondary">CLOSE</button>
+              <button className="casino-btn casino-btn-secondary">{t("common.close")}</button>
             </form>
           </div>
         </div>
@@ -664,24 +664,26 @@ const SlotMachine = (): JSX.Element => {
       {/* Referral Modal */}
       <dialog id="referral_modal" className="modal">
         <div className="modal-box referral-modal">
-          <h3 className="referral-modal-title">REFERRAL PROGRAM</h3>
+          <h3 className="referral-modal-title">{t("index.referralTitle")}</h3>
 
           {/* How it works */}
           <div className="referral-how">
-            <h4 className="referral-section-title">How it works</h4>
+            <h4 className="referral-section-title">{t("index.referralHow")}</h4>
             <div className="referral-steps">
               <div className="referral-step">
                 <span className="referral-step-num">1</span>
-                <span className="referral-step-text">Share your unique link with friends</span>
+                <span className="referral-step-text">{t("index.referralStep1")}</span>
               </div>
               <div className="referral-step">
                 <span className="referral-step-num">2</span>
-                <span className="referral-step-text">They play using your link (first time only)</span>
+                <span className="referral-step-text">{t("index.referralStep2")}</span>
               </div>
               <div className="referral-step">
                 <span className="referral-step-num">3</span>
                 <span className="referral-step-text">
-                  You earn <strong>1% of every bet</strong> they make
+                  {t("index.referralStep3Prefix")}
+                  <strong>{t("index.referralStep3Bold")}</strong>
+                  {t("index.referralStep3Suffix")}
                 </span>
               </div>
             </div>
@@ -690,15 +692,15 @@ const SlotMachine = (): JSX.Element => {
           {/* Your stats */}
           {connectedAddress && (
             <div className="referral-stats">
-              <h4 className="referral-section-title">Your referral earnings</h4>
+              <h4 className="referral-section-title">{t("index.referralEarnings")}</h4>
               <div className="referral-stats-grid">
                 <div className="referral-stat">
                   <span className="referral-stat-value">{formatUnits(BigInt(userInfo.earnedByReferrals), 6)}</span>
-                  <span className="referral-stat-label">USDC earned</span>
+                  <span className="referral-stat-label">{t("index.usdcEarned")}</span>
                 </div>
                 <div className="referral-stat">
                   <span className="referral-stat-value">{formatUnits(BigInt(referralBalance), 6)}</span>
-                  <span className="referral-stat-label">USDC pending</span>
+                  <span className="referral-stat-label">{t("index.usdcPending")}</span>
                 </div>
               </div>
             </div>
@@ -706,23 +708,23 @@ const SlotMachine = (): JSX.Element => {
 
           {/* Your link */}
           <div className="referral-link-section">
-            <h4 className="referral-section-title">Your referral link</h4>
+            <h4 className="referral-section-title">{t("index.referralLinkTitle")}</h4>
             <div className="referral-link">
               <input type="text" value={referralLink} readOnly className="referral-input" />
               <button onClick={copyToClipboard} className="casino-btn casino-btn-copy">
-                {copied ? "COPIED!" : "COPY"}
+                {copied ? t("index.copied") : t("index.copy")}
               </button>
             </div>
           </div>
 
           {/* Share buttons */}
           <div className="referral-share">
-            <h4 className="referral-section-title">Share via</h4>
+            <h4 className="referral-section-title">{t("index.shareVia")}</h4>
             <div className="referral-share-buttons">
               <a
                 className="share-btn share-btn-x"
                 href={`https://x.com/intent/tweet?text=${encodeURIComponent(
-                  "Play Lotero - a provably fair on-chain slot machine! Bet 1 USDC, win up to 30 USDC. No gas needed.\n\n",
+                  t("index.shareText") + "\n\n",
                 )}&url=${encodeURIComponent(referralLink)}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -732,7 +734,7 @@ const SlotMachine = (): JSX.Element => {
               <a
                 className="share-btn share-btn-tg"
                 href={`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(
-                  "Play Lotero - a provably fair on-chain slot machine! Bet 1 USDC, win up to 30 USDC. No gas needed.",
+                  t("index.shareText"),
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -741,10 +743,7 @@ const SlotMachine = (): JSX.Element => {
               </a>
               <a
                 className="share-btn share-btn-wa"
-                href={`https://wa.me/?text=${encodeURIComponent(
-                  "Play Lotero - a provably fair on-chain slot machine! Bet 1 USDC, win up to 30 USDC. No gas needed.\n" +
-                    referralLink,
-                )}`}
+                href={`https://wa.me/?text=${encodeURIComponent(t("index.shareText") + "\n" + referralLink)}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -755,7 +754,7 @@ const SlotMachine = (): JSX.Element => {
 
           <div className="modal-action">
             <form method="dialog">
-              <button className="casino-btn casino-btn-secondary">CLOSE</button>
+              <button className="casino-btn casino-btn-secondary">{t("common.close")}</button>
             </form>
           </div>
         </div>
@@ -764,14 +763,14 @@ const SlotMachine = (): JSX.Element => {
       {/* Pay Table Modal */}
       <dialog id="paytable_modal" className="modal">
         <div className="modal-box">
-          <h3 className="font-bold text-lg neon-text">LOTERO - PAY TABLE</h3>
+          <h3 className="font-bold text-lg neon-text">{t("index.payTableTitle")}</h3>
           <div className="pay-table">
             <table>
               <thead>
                 <tr>
-                  <th>Coin</th>
-                  <th>Match</th>
-                  <th>Payout</th>
+                  <th>{t("index.coin")}</th>
+                  <th>{t("index.match")}</th>
+                  <th>{t("index.payout")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -808,7 +807,7 @@ const SlotMachine = (): JSX.Element => {
           </div>
           <div className="modal-action">
             <form method="dialog">
-              <button className="casino-btn casino-btn-secondary">CLOSE</button>
+              <button className="casino-btn casino-btn-secondary">{t("common.close")}</button>
             </form>
           </div>
         </div>
@@ -817,13 +816,11 @@ const SlotMachine = (): JSX.Element => {
       {/* Error Modal */}
       <dialog id="error_modal" className="modal">
         <div className="modal-box">
-          <h3 className="font-bold text-lg">Game closed!</h3>
-          <p className="py-4">
-            The contract does not have enough funds to pay out in case you win. Please try again later.
-          </p>
+          <h3 className="font-bold text-lg">{t("index.gameClosed")}</h3>
+          <p className="py-4">{t("index.gameClosedMsg")}</p>
           <div className="modal-action">
             <form method="dialog">
-              <button className="casino-btn casino-btn-secondary">CLOSE</button>
+              <button className="casino-btn casino-btn-secondary">{t("common.close")}</button>
             </form>
           </div>
         </div>
@@ -834,21 +831,19 @@ const SlotMachine = (): JSX.Element => {
         <div className="disclaimer-overlay">
           <div className="disclaimer-modal">
             <div className="disclaimer-icon">18+</div>
-            <h3 className="disclaimer-title">Before you play</h3>
+            <h3 className="disclaimer-title">{t("index.disclaimerTitle")}</h3>
             <div className="disclaimer-text">
-              <p>
-                Lotero is an <strong>experimental, open-source protocol</strong> built for educational purposes.
-              </p>
-              <p>By continuing, you acknowledge that:</p>
+              <p>{t("index.disclaimerIntro")}</p>
+              <p>{t("index.disclaimerAck")}</p>
               <ul>
-                <li>You are at least 18 years old</li>
-                <li>You understand this is an experimental protocol</li>
-                <li>You play at your own risk with no warranties</li>
-                <li>You are responsible for compliance with your local laws</li>
+                <li>{t("index.disclaimerAge18")}</li>
+                <li>{t("index.disclaimerExperimental")}</li>
+                <li>{t("index.disclaimerRisk")}</li>
+                <li>{t("index.disclaimerLaws")}</li>
               </ul>
             </div>
             <button className="casino-btn disclaimer-accept-btn" onClick={acceptDisclaimer}>
-              I UNDERSTAND, LET ME PLAY
+              {t("index.disclaimerAccept")}
             </button>
           </div>
         </div>

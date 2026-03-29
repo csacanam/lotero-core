@@ -83,6 +83,36 @@ html, body {
   position: relative;
   z-index: 1;
 
+  .language-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+
+    .lang-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.2s;
+
+      &:hover {
+        border-color: rgba($casino-gold, 0.4);
+        color: #aaa;
+      }
+
+      &.lang-btn-active {
+        border-color: $casino-gold;
+        color: $casino-gold;
+        box-shadow: 0 0 6px rgba($casino-gold, 0.3);
+      }
+    }
+  }
+
   .footer-built {
     font-size: 12px;
     color: #888;
