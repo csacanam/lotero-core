@@ -280,7 +280,7 @@ const SlotMachine = (): JSX.Element => {
   // ─── Slot machine animation ──────────────────────────────────────────────
   function rollReel(value: Element) {
     const el = value as HTMLElement;
-    const pos = Math.floor(Math.random() * num_icons) * icon_height * -1 - 40;
+    const pos = Math.floor(Math.random() * num_icons) * icon_height * -1;
     el.style.backgroundPositionY = `${pos}px`;
   }
 
@@ -302,11 +302,11 @@ const SlotMachine = (): JSX.Element => {
     const reels = document.querySelectorAll(".slots .reel");
 
     setTimeout(() => {
-      (reels[0] as HTMLElement).style.backgroundPositionY = `${s1 * icon_height - 40}px`;
+      (reels[0] as HTMLElement).style.backgroundPositionY = `${s1 * icon_height}px`;
       setTimeout(() => {
-        (reels[1] as HTMLElement).style.backgroundPositionY = `${s2 * icon_height - 40}px`;
+        (reels[1] as HTMLElement).style.backgroundPositionY = `${s2 * icon_height}px`;
         setTimeout(() => {
-          (reels[2] as HTMLElement).style.backgroundPositionY = `${s3 * icon_height - 40}px`;
+          (reels[2] as HTMLElement).style.backgroundPositionY = `${s3 * icon_height}px`;
         }, 300);
       }, 300);
     }, 300);
@@ -411,7 +411,7 @@ const SlotMachine = (): JSX.Element => {
       {/* Neon title */}
       <div className="neon-header">
         <h1 className="neon-title">LOTERO</h1>
-        <p className="neon-subtitle">PROVABLY FAIR SLOT MACHINE</p>
+        <p className="neon-subtitle">PROVABLY FAIR SLOT MACHINE ON BASE</p>
       </div>
 
       {/* Main casino layout */}
