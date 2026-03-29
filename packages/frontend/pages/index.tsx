@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { formatUnits } from "viem";
-import { useAccount, useContractRead } from "wagmi";
+import { useAccount, useContractRead, useDisconnect } from "wagmi";
 import externalContracts from "~~/contracts/externalContracts";
 import scaffoldConfig from "~~/scaffold.config";
 
@@ -41,6 +41,7 @@ const SlotMachine = (): JSX.Element => {
   const slotMachineContract = externalContracts[chainId][0].contracts.SlotMachine;
 
   const { address: connectedAddress, connector } = useAccount();
+  const { disconnect } = useDisconnect();
 
   const userInfo = {
     moneyAdded: 0,
@@ -422,6 +423,20 @@ const SlotMachine = (): JSX.Element => {
             <h2>BALANCE</h2>
           </div>
           <div className="panel-body">
+            {connectedAddress ? (
+              <div className="wallet-info">
+                <code className="wallet-address">
+                  {connectedAddress.slice(0, 6)}...{connectedAddress.slice(-4)}
+                </code>
+                <button className="wallet-disconnect" onClick={() => disconnect()}>
+                  &times;
+                </button>
+              </div>
+            ) : (
+              <button className="casino-btn casino-btn-connect" onClick={handleConnect}>
+                CONNECT WALLET
+              </button>
+            )}
             <div className="balance-display">
               <span className="usdc-icon">$</span>
               <span className="balance-amount">
