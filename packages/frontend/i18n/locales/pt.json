@@ -3,7 +3,7 @@
   "common.close": "FECHAR",
   "common.balance": "SALDO",
   "common.rewards": "PRÊMIOS",
-  "common.player": "Jogador",
+  "common.player": "Carteira do jogador",
 
   "index.subtitle": "CAÇA-NÍQUEIS VERIFICÁVEL NA BASE",
   "index.howItWorks": "Como funciona",
@@ -67,7 +67,7 @@
   "index.disclaimerTitle": "Antes de jogar",
   "index.disclaimerIntro": "Lotero é um protocolo experimental e de código aberto construído para fins educacionais.",
   "index.disclaimerAck": "Ao continuar, você reconhece que:",
-  "index.disclaimerAge18": "Você tem pelo menos 18 anos",
+  "index.disclaimerAge18": "Você é maior de idade no seu país",
   "index.disclaimerExperimental": "Você entende que este é um protocolo experimental",
   "index.disclaimerRisk": "Você joga por sua conta e risco, sem garantias",
   "index.disclaimerLaws": "Você é responsável por cumprir as leis do seu país",

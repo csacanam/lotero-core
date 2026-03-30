@@ -3,7 +3,7 @@
   "common.close": "CLOSE",
   "common.balance": "BALANCE",
   "common.rewards": "REWARDS",
-  "common.player": "Player",
+  "common.player": "Player wallet",
 
   "index.subtitle": "PROVABLY FAIR SLOT MACHINE ON BASE",
   "index.howItWorks": "How it works",
@@ -67,7 +67,7 @@
   "index.disclaimerTitle": "Before you play",
   "index.disclaimerIntro": "Lotero is an experimental, open-source protocol built for educational purposes.",
   "index.disclaimerAck": "By continuing, you acknowledge that:",
-  "index.disclaimerAge18": "You are at least 18 years old",
+  "index.disclaimerAge18": "You are of legal age in your country",
   "index.disclaimerExperimental": "You understand this is an experimental protocol",
   "index.disclaimerRisk": "You play at your own risk with no warranties",
   "index.disclaimerLaws": "You are responsible for compliance with your local laws",

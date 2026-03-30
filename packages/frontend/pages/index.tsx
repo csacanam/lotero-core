@@ -466,7 +466,9 @@ const SlotMachine = (): JSX.Element => {
 
   // ─── Referral ─────────────────────────────────────────────────────────────
   const [copied, setCopied] = useState(false);
-  const referralLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}?ref=${connectedAddress}`;
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "https://lotero.xyz");
+  const referralLink = `${appUrl}?ref=${connectedAddress}`;
   const copyToClipboard = () => {
     navigator.clipboard
       ?.writeText(referralLink)

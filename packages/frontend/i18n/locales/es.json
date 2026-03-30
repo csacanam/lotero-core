@@ -3,7 +3,7 @@
   "common.close": "CERRAR",
   "common.balance": "SALDO",
   "common.rewards": "PREMIOS",
-  "common.player": "Jugador",
+  "common.player": "Wallet del jugador",
 
   "index.subtitle": "TRAGAMONEDAS VERIFICABLE EN BASE",
   "index.howItWorks": "Cómo funciona",
@@ -67,7 +67,7 @@
   "index.disclaimerTitle": "Antes de jugar",
   "index.disclaimerIntro": "Lotero es un protocolo experimental de código abierto construido con fines educativos.",
   "index.disclaimerAck": "Al continuar, reconoces que:",
-  "index.disclaimerAge18": "Tienes al menos 18 años",
+  "index.disclaimerAge18": "Eres mayor de edad en tu país",
   "index.disclaimerExperimental": "Entiendes que este es un protocolo experimental",
   "index.disclaimerRisk": "Juegas bajo tu propio riesgo sin garantías",
   "index.disclaimerLaws": "Eres responsable de cumplir con las leyes de tu país",
