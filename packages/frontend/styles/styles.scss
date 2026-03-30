@@ -810,25 +810,11 @@ html, body {
     align-items: center;
     justify-content: center;
 
-    &.reel-spinning {
-      background-image: url(/lotero-icons.png);
-      background-position: 0 0;
-      background-repeat: repeat-y;
-      background-size: $icon_width auto;
-      animation: reelSpin 1.2s linear infinite;
-    }
+    background-image: url(/lotero-icons.png);
+    background-position: 0 0;
+    background-repeat: repeat-y;
+    background-size: $icon_width auto;
 
-    .reel-stopped-img {
-      width: 65px !important;
-      height: 65px !important;
-      object-fit: contain;
-      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
-    }
-  }
-
-  @keyframes reelSpin {
-    from { background-position-y: 0; }
-    to { background-position-y: #{-3 * $icon_height}; }
   }
 }
 
@@ -874,24 +860,51 @@ html, body {
   font-size: 16px;
   letter-spacing: 2px;
   animation: resultFadeIn 0.4s ease-out;
+  position: relative;
+  overflow: hidden;
+
+  // Progress bar that shrinks over 6 seconds
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    animation: resultTimer 6s linear forwards;
+  }
 
   &.result-win {
     color: $casino-gold;
     background: rgba($casino-gold, 0.1);
     border: 1px solid rgba($casino-gold, 0.3);
     text-shadow: 0 0 10px rgba($casino-gold, 0.4);
+
+    &::after {
+      background: $casino-gold;
+      box-shadow: 0 0 6px rgba($casino-gold, 0.5);
+    }
   }
 
   &.result-lose {
     color: #999;
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.06);
+
+    &::after {
+      background: #555;
+    }
   }
 
   @media (max-width: 480px) {
     margin: 10px 14px 0;
     font-size: 14px;
   }
+}
+
+@keyframes resultTimer {
+  from { width: 100%; }
+  to { width: 0%; }
 }
 
 @keyframes resultFadeIn {
@@ -2109,4 +2122,167 @@ html, body {
 .docs-footer {
   margin-top: 32px;
   text-align: center;
+}
+
+// ─── Mode Toggle (For Humans / For Agents) ──────────────────────────────────
+.mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 20px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 30px;
+  padding: 4px;
+  border: 1px solid rgba(255,255,255,0.06);
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.mode-toggle-btn {
+  padding: 8px 20px;
+  border-radius: 26px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #666;
+  text-decoration: none;
+  transition: all 0.25s ease;
+
+  &:hover {
+    color: #aaa;
+  }
+
+  &.mode-active {
+    background: rgba($casino-gold, 0.15);
+    color: $casino-gold;
+    border: 1px solid rgba($casino-gold, 0.3);
+  }
+
+  @media (max-width: 480px) {
+    padding: 6px 14px;
+    font-size: 11px;
+  }
+}
+
+// Copy for LLM button
+.copy-llm-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+.copy-llm-hint {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.copy-llm-btn {
+  display: inline-block;
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid rgba($neon-blue, 0.3);
+  border-radius: 6px;
+  color: $neon-blue;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba($neon-blue, 0.1);
+    border-color: $neon-blue;
+  }
+}
+
+// ─── For Agents Page ────────────────────────────────────────────────────────
+.agent-endpoint {
+  margin-top: 14px;
+  padding: 16px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.04);
+
+  p {
+    font-size: 13px;
+    color: #999;
+    margin: 8px 0;
+  }
+}
+
+.agent-endpoint-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.agent-method {
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+
+  &.post {
+    background: rgba($casino-green, 0.15);
+    color: $casino-green;
+  }
+
+  &.get {
+    background: rgba($neon-blue, 0.15);
+    color: $neon-blue;
+  }
+}
+
+.agent-path {
+  font-family: monospace;
+  font-size: 14px;
+  color: #ddd;
+  font-weight: 600;
+}
+
+.agent-price {
+  margin-left: auto;
+  font-size: 12px;
+  color: $casino-gold;
+  font-weight: 700;
+}
+
+.agent-code-block {
+  margin-top: 10px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+.agent-code-label {
+  padding: 6px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #666;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.agent-code {
+  margin: 0;
+  padding: 12px;
+  font-size: 12px;
+  color: #ccc;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
 }

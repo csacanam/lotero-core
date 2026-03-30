@@ -6,6 +6,7 @@ import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { formatUnits } from "viem";
 import { useAccount, useContractRead, useDisconnect, useEnsName, useWalletClient } from "wagmi";
 import { MetaHeader } from "~~/components/MetaHeader";
+import { ModeToggle } from "~~/components/ModeToggle";
 import externalContracts from "~~/contracts/externalContracts";
 import { useTranslation } from "~~/i18n";
 import scaffoldConfig from "~~/scaffold.config";
@@ -21,14 +22,9 @@ const SlotMachine = (): JSX.Element => {
   const { t } = useTranslation();
   const reel = ["DOGE", "DOGE", "DOGE", "DOGE", "DOGE", "BNB", "BNB", "ETH", "ETH", "BTC"];
 
-  const [firstResult, setFirstResult] = useState<number>(0);
-  const [secondResult, setSecondResult] = useState<number>(0);
-  const [thirdResult, setThirdResult] = useState<number>(0);
-
-  const [, setIsRolling] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
-  const [reelsStopped, setReelsStopped] = useState<[boolean, boolean, boolean]>([true, true, true]);
+  const reelAnimRef = useRef<number[]>([0, 0, 0]); // animation frame IDs
   const [showWinCelebration, setShowWinCelebration] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
@@ -155,9 +151,7 @@ const SlotMachine = (): JSX.Element => {
   // ─── Reset states ─────────────────────────────────────────────────────────
   const resetStates = () => {
     setIsPlaying(false);
-    setIsRolling(false);
     setIsWaitingForResponse(false);
-    stopSoundCasino();
   };
 
   // ─── Poll for round result ───────────────────────────────────────────────
@@ -248,50 +242,53 @@ const SlotMachine = (): JSX.Element => {
 
       const result = await pollForResult(requestId);
 
-      stopSoundCasino();
+      // Log real results for verification
+      console.log("[RESULT] VRF indices:", result.n1, result.n2, result.n3);
+      console.log("[RESULT] Symbols:", reel[result.n1], reel[result.n2], reel[result.n3]);
+      console.log("[RESULT] Won:", result.hasWon);
 
-      // Reveal results one by one as each reel stops (with stop sound)
-      setTimeout(() => {
-        setFirstResult(result.n1);
-        setReelsStopped(prev => [true, prev[1], prev[2]]);
+      // Stop reels one by one: decelerate to exact sprite position
+      const stopSequence = async () => {
+        // Reel 1
+        await new Promise(r => setTimeout(r, 300));
+        await stopReel(0, result.n1);
         startClickSound();
 
-        setTimeout(() => {
-          setSecondResult(result.n2);
-          setReelsStopped(prev => [prev[0], true, prev[2]]);
-          startClickSound();
+        // Reel 2
+        await new Promise(r => setTimeout(r, 300));
+        await stopReel(1, result.n2);
+        startClickSound();
 
-          setTimeout(() => {
-            setThirdResult(result.n3);
-            setReelsStopped(prev => [prev[0], prev[1], true]);
-            setIsRolling(false);
-            startClickSound();
+        // Reel 3
+        await new Promise(r => setTimeout(r, 300));
+        await stopReel(2, result.n3);
+        startClickSound();
 
-            resetStates();
-            refetchBalance();
-            refetchUserInfo();
+        stopSoundCasino();
+        resetStates();
+        refetchBalance();
+        refetchUserInfo();
 
-            // Show result message only after all 3 reels stopped
-            if (result.hasWon) {
-              const prize =
-                reel[result.n1] === "BTC"
-                  ? "30"
-                  : reel[result.n1] === "ETH"
-                  ? "20"
-                  : reel[result.n1] === "BNB"
-                  ? "14"
-                  : "5";
-              setLastResult({ won: true, prize });
-              setShowWinCelebration(true);
-              startWinSound();
-              setTimeout(() => setShowWinCelebration(false), 4000);
-            } else {
-              setLastResult({ won: false });
-            }
-            setTimeout(() => setLastResult(null), 6000);
-          }, 700);
-        }, 700);
-      }, 500);
+        // Show result message only after all 3 reels stopped
+        if (result.hasWon) {
+          const prize =
+            reel[result.n1] === "BTC"
+              ? "30"
+              : reel[result.n1] === "ETH"
+              ? "20"
+              : reel[result.n1] === "BNB"
+              ? "14"
+              : "5";
+          setLastResult({ won: true, prize });
+          setShowWinCelebration(true);
+          startWinSound();
+          setTimeout(() => setShowWinCelebration(false), 4000);
+        } else {
+          setLastResult({ won: false });
+        }
+        setTimeout(() => setLastResult(null), 6000);
+      };
+      stopSequence();
     } catch (error: any) {
       console.error("Spin error:", error);
       resetStates();
@@ -365,9 +362,63 @@ const SlotMachine = (): JSX.Element => {
   };
 
   // ─── Slot machine animation ──────────────────────────────────────────────
+  const ICON_H = 79;
+  const SPRITE_H = 10 * ICON_H;
+
+  function spinReel(reelIndex: number) {
+    const reelEl = document.querySelectorAll(".slots .reel")[reelIndex] as HTMLElement;
+    if (!reelEl) return;
+    let pos = parseFloat(reelEl.style.backgroundPositionY) || 0;
+
+    const tick = () => {
+      pos -= 12; // fast spin
+      reelEl.style.backgroundPositionY = `${pos}px`;
+      reelAnimRef.current[reelIndex] = requestAnimationFrame(tick);
+    };
+    reelAnimRef.current[reelIndex] = requestAnimationFrame(tick);
+  }
+
+  function stopReel(reelIndex: number, vrfIndex: number): Promise<void> {
+    return new Promise(resolve => {
+      const reelEl = document.querySelectorAll(".slots .reel")[reelIndex] as HTMLElement;
+      if (!reelEl) {
+        resolve();
+        return;
+      }
+      cancelAnimationFrame(reelAnimRef.current[reelIndex]);
+
+      const pos = parseFloat(reelEl.style.backgroundPositionY) || 0;
+      const spriteIdx = vrfIndex; // sprite is now in same order as contract reel
+
+      // Only 1 rotation + land on target (fast stop like real casino)
+      const currentCycle = Math.floor(-pos / SPRITE_H);
+      const finalPos = -((currentCycle + 1) * SPRITE_H + spriteIdx * ICON_H);
+      const totalDistance = pos - finalPos;
+      let traveled = 0;
+
+      const decel = () => {
+        const progress = traveled / totalDistance;
+        // Fast deceleration: starts at full speed, slows only in last 30%
+        const speed = progress < 0.7 ? 12 : Math.max(1, 12 * Math.pow(1 - (progress - 0.7) / 0.3, 2));
+        traveled += speed;
+
+        if (traveled >= totalDistance) {
+          reelEl.style.backgroundPositionY = `${finalPos}px`;
+          resolve();
+          return;
+        }
+
+        reelEl.style.backgroundPositionY = `${pos - traveled}px`;
+        reelAnimRef.current[reelIndex] = requestAnimationFrame(decel);
+      };
+      reelAnimRef.current[reelIndex] = requestAnimationFrame(decel);
+    });
+  }
+
   function startSlotMachine() {
-    setIsRolling(true);
-    setReelsStopped([false, false, false]);
+    spinReel(0);
+    spinReel(1);
+    spinReel(2);
   }
 
   // ─── Sound functions ─────────────────────────────────────────────────────
@@ -425,6 +476,7 @@ const SlotMachine = (): JSX.Element => {
   return (
     <div className="casino-page">
       <MetaHeader />
+      <ModeToggle active="humans" />
       {/* Win celebration overlay */}
       {showWinCelebration && (
         <div className="win-celebration">
@@ -560,41 +612,11 @@ const SlotMachine = (): JSX.Element => {
             <div className="win-line" />
 
             <div className="slots">
-              <div className={`reel ${!reelsStopped[0] ? "reel-spinning" : ""}`}>
-                {reelsStopped[0] && (
-                  <Image
-                    src={`/logos/${reel[firstResult].toLowerCase()}.png`}
-                    alt={reel[firstResult]}
-                    width={79}
-                    height={79}
-                    className="reel-stopped-img"
-                  />
-                )}
-              </div>
+              <div className="reel" />
               <div className="reel-divider" />
-              <div className={`reel ${!reelsStopped[1] ? "reel-spinning" : ""}`}>
-                {reelsStopped[1] && (
-                  <Image
-                    src={`/logos/${reel[secondResult].toLowerCase()}.png`}
-                    alt={reel[secondResult]}
-                    width={79}
-                    height={79}
-                    className="reel-stopped-img"
-                  />
-                )}
-              </div>
+              <div className="reel" />
               <div className="reel-divider" />
-              <div className={`reel ${!reelsStopped[2] ? "reel-spinning" : ""}`}>
-                {reelsStopped[2] && (
-                  <Image
-                    src={`/logos/${reel[thirdResult].toLowerCase()}.png`}
-                    alt={reel[thirdResult]}
-                    width={79}
-                    height={79}
-                    className="reel-stopped-img"
-                  />
-                )}
-              </div>
+              <div className="reel" />
             </div>
 
             {/* Glass reflection overlay */}
