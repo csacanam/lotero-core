@@ -114,6 +114,50 @@ Player balances and referral stats.
 
 ---
 
+### GET /stats (Free)
+
+Public on-chain stats. All values are derived from SlotMachineV2 contract state — verifiable on BaseScan. Designed for dashboards, build-in-public, and external integrations.
+
+**Response:**
+
+```json
+{
+  "totalSpins": 150,
+  "totalVolumeUSDC": 150,
+  "contractOpen": true,
+  "bankrollUSDC": 85.5,
+  "revenue": {
+    "devFeesUSDC": 7.5,
+    "devFeesClaimed": 5.0,
+    "devFeesPending": 2.5,
+    "houseEdgeUSDC": 12.3,
+    "estimatedX402FeesUSDC": 15.0,
+    "totalRevenueUSDC": 34.8
+  },
+  "players": {
+    "totalEarnedUSDC": 120.0,
+    "totalClaimedUSDC": 100.0,
+    "pendingUSDC": 20.0
+  },
+  "referrals": {
+    "totalEarnedUSDC": 10.2,
+    "totalClaimedUSDC": 8.0,
+    "pendingUSDC": 2.2
+  }
+}
+```
+
+| Field | Source | Description |
+|-------|--------|-------------|
+| `totalSpins` | `totalMoneyAdded / 1 USDC` | Total spins played (all time) |
+| `totalVolumeUSDC` | `totalMoneyAdded` | Total USDC bet |
+| `revenue.devFeesUSDC` | `totalMoneyEarnedByDevs` | 5% of every bet, on-chain |
+| `revenue.houseEdgeUSDC` | Derived | Volume - player prizes - dev fees - referral fees |
+| `revenue.estimatedX402FeesUSDC` | `totalSpins × 0.1` | Off-chain estimate (x402 fees are not tracked on-chain) |
+| `revenue.totalRevenueUSDC` | Sum | Dev fees + house edge + x402 fees |
+
+---
+
 ### GET /contract/health (Free)
 
 Contract bankroll, max bet, open/closed, executor balance, VRF subscription (if configured).
@@ -153,6 +197,130 @@ Service info and list of endpoints.
 
 ---
 
+## Wallet Roles
+
+The system uses several wallets with distinct roles. They are split into two groups: the core Lotero Agent wallets (required to run the casino) and the ACP wallets (only needed for Virtuals Agent Commerce Protocol integration).
+
+### Lotero Agent
+
+```
+┌─────────────┐   x402 payment   ┌──────────────┐   playFor / claim   ┌───────────────┐
+│   Client /   │ ───────────────► │   Executor   │ ──────────────────► │ SlotMachineV2 │
+│   Frontend   │                  │   Wallet     │   (gas ETH + bet)   │   (contract)  │
+└─────────────┘                  └──────────────┘                     └───────────────┘
+                                   │  = PAY_TO (receives x402 USDC)
+                                   │  Cron auto top-up: wallet → contract
+                                   │  Cron dev claim: contract → wallet
+```
+
+| Wallet | Env variable | Role | Funds needed | Cron monitoring |
+|--------|-------------|------|--------------|-----------------|
+| **Executor** | `EXECUTOR_PRIVATE_KEY` | Signs all on-chain transactions (spins, claims, top-ups, dev claims). Pays gas and bets. | ETH (gas) + USDC (bets + buffer) | **ETH**: CRITICAL alert if < 0.01, target 0.05. **USDC**: INFO alert if < 10, auto top-up contract when excess > 5. Auto dev claim when pending >= 5. |
+| **Pay To** | `PAY_TO` | Address that receives x402 payments from clients. Typically the same address as Executor. | — (receives USDC) | Included in Executor monitoring (same wallet) |
+| **Payer** | `PAYER_PRIVATE_KEY` | Test-only wallet used by `spin-paid.js` and `claim-paid.js` scripts to simulate a paying client. Not used in production. | USDC (to pay x402 in test scripts) | None |
+
+Additionally, the cron monitors these non-wallet resources:
+
+| Resource | Cron monitoring |
+|----------|-----------------|
+| **Contract bankroll** | CRITICAL alert + auto top-up if bankroll < 60 USDC or contract closed. Target: 90 USDC. |
+| **VRF subscription** | WARNING alert if LINK < 0.31 (or native ETH low). No auto-action — manual top-up required. |
+
+> **In practice**, Executor and Pay To are usually the same wallet. The Payer is a separate wallet only used for testing.
+
+### ACP (Virtuals Agent Commerce Protocol)
+
+These wallets are only needed when running the ACP seller or buyer integrations (`acp:seller`, `acp:buyer`). They are independent from the Lotero Agent wallets above.
+
+| Wallet | Env variable | Role | Funds needed | Cron monitoring |
+|--------|-------------|------|--------------|-----------------|
+| **Seller Whitelisted** | `ACP_SELLER_WHITELISTED_WALLET_PRIVATE_KEY` | Signs ACP transactions for the seller agent. Registered at [app.virtuals.io/acp/join](https://app.virtuals.io/acp/join). | VIRTUAL (ACP gas on Base) | None |
+| **Seller Agent** | `ACP_SELLER_AGENT_WALLET_ADDRESS` | Public address of the seller agent in ACP. | — | USDC balance shown in hourly status report (read-only) |
+| **Buyer Whitelisted** | `ACP_BUYER_WHITELISTED_WALLET_PRIVATE_KEY` | Signs ACP transactions for the buyer agent. | VIRTUAL (ACP gas on Base) | None |
+| **Buyer Agent** | `ACP_BUYER_AGENT_WALLET_ADDRESS` | Public address of the buyer agent in ACP. | — | None |
+
+> **Note:** ACP wallets are not actively monitored. If the Seller or Buyer Whitelisted wallets run out of gas (VIRTUAL), there will be no alert. The Seller Agent USDC balance is only displayed in the hourly status report when `CRON_STATUS_REPORT=true`.
+
+---
+
+## Revenue Flow
+
+All revenue flows into the **Executor wallet**. There are two income sources and two cost categories:
+
+### Income
+
+```
+Executor Wallet (PAY_TO)
+├── x402 service fee ............. 0.1 USDC per spin (immediate, paid by client)
+├── x402 claim fee ............... 0.1 USDC per claim (immediate, paid by client)
+└── Dev fee (5% of each bet) ..... auto-claimed by cron when pending >= 5 USDC
+```
+
+- **x402 fees** land directly in the Executor wallet when a client pays for a spin or claim. These are not tracked on-chain — they are standard USDC transfers via the CDP facilitator.
+- **Dev fees** accumulate inside the SlotMachineV2 contract (5% of every 1 USDC bet = 0.05 USDC per spin). The cron auto-claims them to the Executor wallet and sends a Telegram alert ("DEV FEES WITHDRAWN").
+
+### Costs
+
+```
+Executor Wallet
+├── Gas (ETH) .................... ~0.0001–0.001 ETH per tx (spin, claim, top-up)
+└── Bet capital .................. 1 USDC per spin (sent to contract via playFor)
+```
+
+- **Bet capital** is not a loss — it stays in the contract bankroll. When players lose, the USDC remains in the contract. The cron recycles it: dev fees are claimed back, and the bankroll is maintained at the target level (90 USDC).
+- **Gas** is the real operational cost. On Base L2, gas is very cheap (~$0.001 per tx).
+
+### Net revenue per spin
+
+| Component | Amount | Type |
+|-----------|--------|------|
+| x402 service fee | +0.1 USDC | Immediate income |
+| Dev fee (5% of 1 USDC bet) | +0.05 USDC | Accumulated, auto-claimed |
+| Gas cost | ~-0.001 USDC | Operational cost |
+| **Net per spin** | **~0.149 USDC** | |
+
+### How to know when you can withdraw profits
+
+The Executor wallet mixes operational capital (buffer for bets + gas) with profits. To know your available profit:
+
+```
+Profit available = Executor USDC balance - operational buffer (target: 20 USDC)
+```
+
+If the Executor wallet has 50 USDC and the target buffer is 20, you can safely withdraw ~30 USDC. The cron will alert you if the buffer drops below 10 USDC.
+
+**Withdraw how?** Simply transfer USDC out of the Executor wallet to your personal wallet using any Base-compatible wallet (e.g. MetaMask, Coinbase Wallet). The Executor private key is in your `.env`.
+
+### Tracking revenue on-chain (for build-in-public)
+
+The SlotMachineV2 contract exposes public read functions that give you all-time revenue stats:
+
+| Contract function | What it tells you |
+|-------------------|-------------------|
+| `totalMoneyAdded` | Total USDC bet by all players (number of spins × 1 USDC) |
+| `totalMoneyEarnedByDevs` | Total dev fees accumulated (5% of totalMoneyAdded) |
+| `totalMoneyClaimedByDevs` | Dev fees already withdrawn to Executor |
+| `totalMoneyEarnedByPlayers` | Total prizes won by players |
+| `totalMoneyClaimedByPlayers` | Prizes already claimed by players |
+| `totalMoneyEarnedByReferrals` | Total referral commissions earned |
+| `totalMoneyClaimedByReferrals` | Referral commissions already claimed |
+| `getMoneyInContract()` | Current USDC in contract |
+| `getCurrentDebt()` | Unclaimed player + dev + referral earnings |
+
+**Key metrics you can derive:**
+
+```
+Total spins         = totalMoneyAdded / 1 USDC
+Dev revenue         = totalMoneyEarnedByDevs (on-chain, verifiable)
+x402 revenue        = totalSpins × 0.1 USDC (off-chain, estimated from spin count)
+House edge profit   = totalMoneyAdded - totalMoneyEarnedByPlayers - totalMoneyEarnedByDevs - totalMoneyEarnedByReferrals
+Total revenue       = Dev fees + x402 fees + house edge profit
+```
+
+All of these are readable via BaseScan or by calling the contract directly. For a public dashboard, you could read these values periodically and display them.
+
+---
+
 ## Environment
 
 See [packages/agent/.env.example](../packages/agent/.env.example) for the full list. Summary:
@@ -177,8 +345,23 @@ See [packages/agent/.env.example](../packages/agent/.env.example) for the full l
 | `PAYER_PRIVATE_KEY` | No | For paid scripts: wallet that pays x402 (needs USDC) |
 | `TELEGRAM_BOT_TOKEN` | No | Bot token from [@BotFather](https://t.me/BotFather) |
 | `TELEGRAM_CHAT_ID` | No | Chat ID (from [@userinfobot](https://t.me/userinfobot)) |
+| `CRON_STATUS_REPORT` | No | `true` to send hourly status report via Telegram |
+| `CRON_STATUS_AGENT_WALLET` | No | Agent wallet address to show in status report (falls back to `ACP_SELLER_AGENT_WALLET_ADDRESS`) |
 
 *Required when using Coinbase facilitator (mainnet default).
+
+**ACP variables** (only for Virtuals Agent Commerce Protocol, see [Wallet Roles](#wallet-roles)):
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ACP_SELLER_WHITELISTED_WALLET_PRIVATE_KEY` | For acp:seller | Seller signer wallet (registered at app.virtuals.io) |
+| `ACP_SELLER_ENTITY_ID` | For acp:seller | Seller entity ID from ACP |
+| `ACP_SELLER_AGENT_WALLET_ADDRESS` | For acp:seller | Seller agent public address |
+| `ACP_BUYER_WHITELISTED_WALLET_PRIVATE_KEY` | For acp:buyer | Buyer signer wallet |
+| `ACP_BUYER_ENTITY_ID` | For acp:buyer | Buyer entity ID from ACP |
+| `ACP_BUYER_AGENT_WALLET_ADDRESS` | For acp:buyer | Buyer agent public address |
+| `ACP_TARGET_AGENT_KEYWORD` | No | Keyword to discover seller (default: `lotero`) |
+| `ACP_BUYER_DEBUG` | No | `1` to only discover agent without executing (debug mode) |
 
 **Optional but commonly set:** These have defaults, but you'll often set them for your setup:
 - `BASE_RPC` — Use Alchemy/Infura if you need better reliability than the public RPC

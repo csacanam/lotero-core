@@ -353,6 +353,8 @@ app.get("/", readOnlyRateLimit, (_req, res) => {
       "GET /round": "Get round result. Query: requestId.",
       "GET /player/:address/balances":
         "Get player balances and referral stats.",
+      "GET /stats":
+        "Public on-chain stats: spins, volume, revenue, players/devs/referrals.",
       "GET /contract/health":
         "Executor ETH/USDC, contract bankroll, VRF subscription.",
       "GET /cron/health":
@@ -404,6 +406,78 @@ app.get("/player/:address/balances", readOnlyRateLimit, async (req, res) => {
       moneyClaimed: user.moneyClaimed.toString(),
       earnedByReferrals: user.earnedByReferrals.toString(),
       claimedByReferrals: user.claimedByReferrals.toString(),
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/** GET /stats – Public on-chain stats: spins, volume, revenue, players/devs/referrals */
+app.get("/stats", readOnlyRateLimit, async (_req, res) => {
+  try {
+    const [
+      totalMoneyAdded,
+      moneyInContract,
+      currentDebt,
+      isClosed,
+      earnedByPlayers,
+      claimedByPlayers,
+      earnedByDevs,
+      claimedByDevs,
+      earnedByReferrals,
+      claimedByReferrals,
+    ] = await Promise.all([
+      slotMachine.totalMoneyAdded(),
+      slotMachine.getMoneyInContract(),
+      slotMachine.getCurrentDebt(),
+      slotMachine.isClosed(),
+      slotMachine.totalMoneyEarnedByPlayers(),
+      slotMachine.totalMoneyClaimedByPlayers(),
+      slotMachine.totalMoneyEarnedByDevs(),
+      slotMachine.totalMoneyClaimedByDevs(),
+      slotMachine.totalMoneyEarnedByReferrals(),
+      slotMachine.totalMoneyClaimedByReferrals(),
+    ]);
+
+    const fmt = (raw) => parseFloat(ethers.utils.formatUnits(raw, 6));
+
+    const totalBetUSDC = fmt(totalMoneyAdded);
+    const totalSpins = Math.round(totalBetUSDC); // 1 USDC per spin
+    const bankroll = fmt(moneyInContract.sub(currentDebt));
+
+    const devEarned = fmt(earnedByDevs);
+    const devClaimed = fmt(claimedByDevs);
+    const playerEarned = fmt(earnedByPlayers);
+    const playerClaimed = fmt(claimedByPlayers);
+    const referralEarned = fmt(earnedByReferrals);
+    const referralClaimed = fmt(claimedByReferrals);
+
+    // House edge = total bet - prizes - dev fees - referral fees
+    const houseEdge = totalBetUSDC - playerEarned - devEarned - referralEarned;
+
+    return res.json({
+      totalSpins,
+      totalVolumeUSDC: totalBetUSDC,
+      contractOpen: !isClosed,
+      bankrollUSDC: bankroll,
+      revenue: {
+        devFeesUSDC: devEarned,
+        devFeesClaimed: devClaimed,
+        devFeesPending: devEarned - devClaimed,
+        houseEdgeUSDC: houseEdge,
+        estimatedX402FeesUSDC: totalSpins * 0.1,
+        totalRevenueUSDC: devEarned + houseEdge + totalSpins * 0.1,
+      },
+      players: {
+        totalEarnedUSDC: playerEarned,
+        totalClaimedUSDC: playerClaimed,
+        pendingUSDC: playerEarned - playerClaimed,
+      },
+      referrals: {
+        totalEarnedUSDC: referralEarned,
+        totalClaimedUSDC: referralClaimed,
+        pendingUSDC: referralEarned - referralClaimed,
+      },
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });

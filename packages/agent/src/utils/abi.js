@@ -6,6 +6,7 @@
  * - Claim operations (claimPlayerEarnings)
  * - Cron/monitoring (getMoneyInContract, getCurrentDebt, isClosed, useNativePayment)
  * - Auto top-up (depositTokens, totalMoneyEarnedByDevs, totalMoneyClaimedByDevs, claimDevEarnings)
+ * - Stats (totalMoneyAdded, totalMoneyEarnedByPlayers, totalMoneyClaimedByPlayers, totalMoneyEarnedByReferrals, totalMoneyClaimedByReferrals)
  */
 
 /** SlotMachineV2 contract – spin, claim, and funding operations */
@@ -157,6 +158,43 @@ export const SlotMachineV2Abi = [
     name: "claimDevEarnings",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+
+  // ─── Stats (public endpoint) ────────────────────────────────────────────
+  {
+    inputs: [],
+    name: "totalMoneyAdded",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalMoneyEarnedByPlayers",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalMoneyClaimedByPlayers",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalMoneyEarnedByReferrals",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalMoneyClaimedByReferrals",
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
     type: "function",
   },
 ];
