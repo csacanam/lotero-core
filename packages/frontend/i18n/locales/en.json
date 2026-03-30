@@ -45,6 +45,7 @@
   "index.connectionError": "Connection problem. Please check your internet and try again.",
   "index.walletNotConnected": "Please connect your wallet first.",
   "index.walletWarning": "Your wallet may show a security warning — this is normal for gasless payments via x402.",
+  "index.switchToBase": "SWITCH TO BASE NETWORK",
 
   "index.referralBanner": "You were invited by {address} — your friend earns 1% of your bets as a reward. Play and you can invite others too!",
   "index.referralTitle": "REFERRAL PROGRAM",

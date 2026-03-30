@@ -45,6 +45,7 @@
   "index.connectionError": "Problema de conexão. Verifique sua internet e tente novamente.",
   "index.walletNotConnected": "Conecte sua carteira primeiro.",
   "index.walletWarning": "Sua carteira pode exibir um aviso de segurança — isso é normal para pagamentos sem gas via x402.",
+  "index.switchToBase": "MUDAR PARA REDE BASE",
 
   "index.referralBanner": "Você foi convidado por {address} — seu amigo ganha 1% das suas apostas como recompensa. Jogue e convide outros também!",
   "index.referralTitle": "PROGRAMA DE INDICAÇÃO",

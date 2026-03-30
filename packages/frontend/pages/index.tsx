@@ -4,7 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { formatUnits } from "viem";
-import { useAccount, useContractRead, useDisconnect, useEnsName, useWalletClient } from "wagmi";
+import {
+  useAccount,
+  useContractRead,
+  useDisconnect,
+  useEnsName,
+  useNetwork,
+  useSwitchNetwork,
+  useWalletClient,
+} from "wagmi";
 import { MetaHeader } from "~~/components/MetaHeader";
 import { ModeToggle } from "~~/components/ModeToggle";
 import externalContracts from "~~/contracts/externalContracts";
@@ -62,6 +70,16 @@ const SlotMachine = (): JSX.Element => {
   const { disconnect } = useDisconnect();
   const { data: ensName } = useEnsName({ address: connectedAddress, chainId: 1 });
   const { data: walletClient } = useWalletClient();
+  const { chain } = useNetwork();
+  const { switchNetwork } = useSwitchNetwork();
+  const isWrongNetwork = connectedAddress && chain?.id !== chainId;
+
+  // Auto-switch to Base when connected on wrong network
+  useEffect(() => {
+    if (isWrongNetwork && switchNetwork) {
+      switchNetwork(chainId);
+    }
+  }, [isWrongNetwork, switchNetwork, chainId]);
 
   const userInfo = {
     moneyAdded: 0,
@@ -534,17 +552,24 @@ const SlotMachine = (): JSX.Element => {
           </div>
           <div className="panel-body">
             {connectedAddress ? (
-              <div className="wallet-info">
-                <span className="wallet-label">{t("common.player")}</span>
-                <div className="wallet-row">
-                  <code className="wallet-address">
-                    {ensName || `${connectedAddress.slice(0, 6)}...${connectedAddress.slice(-4)}`}
-                  </code>
-                  <button className="wallet-disconnect" onClick={() => disconnect()}>
-                    &times;
-                  </button>
+              <>
+                <div className="wallet-info">
+                  <span className="wallet-label">{t("common.player")}</span>
+                  <div className="wallet-row">
+                    <code className="wallet-address">
+                      {ensName || `${connectedAddress.slice(0, 6)}...${connectedAddress.slice(-4)}`}
+                    </code>
+                    <button className="wallet-disconnect" onClick={() => disconnect()}>
+                      &times;
+                    </button>
+                  </div>
                 </div>
-              </div>
+                {isWrongNetwork && (
+                  <button className="casino-btn casino-btn-connect" onClick={() => switchNetwork?.(chainId)}>
+                    {t("index.switchToBase")}
+                  </button>
+                )}
+              </>
             ) : (
               <button className="casino-btn casino-btn-connect" onClick={handleConnect}>
                 {t("common.connectWallet")}
