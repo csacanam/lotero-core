@@ -26,6 +26,7 @@ import { createCronRouter } from "./routes/cron.js";
 import { executeSpin } from "./services/spin.js";
 import { executeClaim } from "./services/claim.js";
 import { startAcpSeller } from "../acp/seller.js";
+import { getBaseProvider } from "./utils/baseProvider.js";
 
 // ─── Config ────────────────────────────────────────────────────────────────
 // Required env vars (no defaults)
@@ -70,7 +71,6 @@ if (!SLOT_MACHINE_ADDRESS || !EXECUTOR_PRIVATE_KEY || !PAY_TO) {
 }
 
 // ─── Ethers / contracts ─────────────────────────────────────────────────────
-const { getBaseProvider } = await import("./utils/baseProvider.js");
 const provider = getBaseProvider();
 const executorWallet = new ethers.Wallet(EXECUTOR_PRIVATE_KEY, provider);
 const slotMachine = new ethers.Contract(

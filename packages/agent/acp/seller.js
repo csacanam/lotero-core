@@ -28,6 +28,7 @@ import {
   validateContractHealth,
   validateForClaim,
 } from "../src/services/validation.js";
+import { getBaseProvider } from "../src/utils/baseProvider.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const agentRoot = path.resolve(__dirname, "..");
@@ -79,7 +80,6 @@ if (isRunDirectly && !hasAcpEnv) {
   process.exit(0);
 }
 
-const { getBaseProvider } = await import("../src/utils/baseProvider.js");
 const provider = getBaseProvider();
 const executorWallet = new ethers.Wallet(EXECUTOR_PRIVATE_KEY, provider);
 const slotMachine = new ethers.Contract(
