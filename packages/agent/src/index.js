@@ -481,6 +481,7 @@ app.get("/stats", readOnlyRateLimit, async (_req, res) => {
       },
     });
   } catch (err) {
+    console.error(`[stats] failed: ${err.message}`);
     return res.status(500).json({ error: err.message });
   }
 });

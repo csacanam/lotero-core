@@ -32,12 +32,16 @@ function parseUrls() {
   return list;
 }
 
+const FALLBACK_LOG_INTERVAL_MS = 60 * 1000; // throttle "serving via fallback" logs
+
 class FailoverBaseProvider extends ethers.providers.JsonRpcProvider {
   constructor() {
     const urls = parseUrls();
     super(urls[0]);
     this._urls = urls;
     this._blockedUntil = new Map();
+    this._lastFallbackLogAt = 0;
+    console.log(`[base-rpc] providers (in order): ${urls.map(maskUrl).join(", ")}`);
   }
 
   _isBlocked(url) {
@@ -82,7 +86,7 @@ class FailoverBaseProvider extends ethers.providers.JsonRpcProvider {
       if (!ignoreBlocks && this._isBlocked(url)) continue;
       try {
         const r = await this._tryUrl(url, method, params);
-        if (r.ok) return { ok: true, result: r.result };
+        if (r.ok) return { ok: true, result: r.result, url };
         if (r.capacity) this._markBlocked(url);
         lastErr = r.err;
       } catch (err) {
@@ -103,9 +107,21 @@ class FailoverBaseProvider extends ethers.providers.JsonRpcProvider {
         await new Promise((r) => setTimeout(r, jitter));
       }
       const r = await this._attemptAll(method, params, i >= 1);
-      if (r.ok) return r.result;
+      if (r.ok) {
+        // Surface when we're running on a fallback (e.g. primary RPC exhausted
+        // its capacity). Throttled so a dead primary doesn't flood the logs.
+        if (r.url !== this._urls[0]) {
+          const now = Date.now();
+          if (now - this._lastFallbackLogAt > FALLBACK_LOG_INTERVAL_MS) {
+            this._lastFallbackLogAt = now;
+            console.warn(`[base-rpc] serving via fallback ${maskUrl(r.url)} (primary unavailable)`);
+          }
+        }
+        return r.result;
+      }
       lastErr = r.err;
     }
+    console.error(`[base-rpc] ${method} failed after ${delays.length} attempts: ${lastErr?.message || lastErr}`);
     throw lastErr || new Error("All Base RPC URLs exhausted");
   }
 }
