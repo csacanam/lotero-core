@@ -70,7 +70,8 @@ if (!SLOT_MACHINE_ADDRESS || !EXECUTOR_PRIVATE_KEY || !PAY_TO) {
 }
 
 // ─── Ethers / contracts ─────────────────────────────────────────────────────
-const provider = new ethers.providers.JsonRpcProvider(BASE_RPC);
+const { getBaseProvider } = await import("./utils/baseProvider.js");
+const provider = getBaseProvider();
 const executorWallet = new ethers.Wallet(EXECUTOR_PRIVATE_KEY, provider);
 const slotMachine = new ethers.Contract(
   SLOT_MACHINE_ADDRESS,

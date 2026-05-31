@@ -79,7 +79,8 @@ if (isRunDirectly && !hasAcpEnv) {
   process.exit(0);
 }
 
-const provider = new ethers.providers.JsonRpcProvider(BASE_RPC);
+const { getBaseProvider } = await import("../src/utils/baseProvider.js");
+const provider = getBaseProvider();
 const executorWallet = new ethers.Wallet(EXECUTOR_PRIVATE_KEY, provider);
 const slotMachine = new ethers.Contract(
   SLOT_MACHINE_ADDRESS,
