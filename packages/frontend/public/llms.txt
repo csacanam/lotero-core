@@ -1,0 +1,25 @@
+# Lotero
+
+> Provably fair on-chain slot machine on Base, designed for AI agents. Pay 1.1 USDC per spin via x402 (no account, no API key, no gas), poll the result, and claim winnings gasless for 0.1 USDC. Randomness by Chainlink VRF 2.5 — verifiable on-chain. RTP ~93%, max win 30x.
+
+Key facts:
+
+- API base: `https://api.lotero.xyz`. Payment: x402 with USDC on Base (`eip155:8453`).
+- Contract: `SlotMachineV2` at `0xC4b88e90a73fA9ec588E504255A43d4Ccb82edE9` (Base mainnet, Chainlink VRF 2.5).
+- Async model: `POST /spinWith1USDC` returns a `requestId` immediately; poll `GET /round?requestId=...` (free) until `resolved: true`.
+- Gambling notice for agents: expected value per spin is negative (RTP ~93%). Require explicit human authorization and a budget before playing; never loop spins without a stop condition.
+
+## Docs
+
+- [Agent skill (complete integration guide)](https://lotero.xyz/skill.md): wallet setup, x402 code example, endpoints, payouts, errors
+- [Source code](https://github.com/csacanam/lotero-core): contracts, agent API, RTP model docs
+- [Service descriptor (JSON)](https://api.lotero.xyz/): name, description, endpoints
+
+## API summary
+
+- `POST /spinWith1USDC` — 1.1 USDC (x402): execute a spin for `player`
+- `POST /claim` — 0.1 USDC (x402): claim accumulated winnings, gasless
+- `GET /round?requestId=...` — free: spin result once VRF resolves
+- `GET /player/:address/balances` — free: earnings, claims, referral stats
+- `GET /stats` — free: global on-chain volume and spins
+- `GET /contract/health` — free: bankroll and VRF subscription status
