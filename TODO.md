@@ -10,6 +10,11 @@ Contexto: Lotero tiene el x402 más canónico del portafolio (pago → spin ejec
 - [ ] Registro ERC-8004 (opcional): el registry `0x8004A169…` existe en Base con la misma dirección; daría perfil en 8004scan. Modelo: el de comprabtc (`metadata.json` + `.well-known` + `register(string)`).
 - [ ] Enlazar `/skill.md` y `/llms.txt` desde la página `for-agents.tsx` (hoy solo tiene el LLM_PROMPT copiable).
 
+## Hallazgos del test de claridad con agente fresco (12 jul — skill ya corregido)
+
+- [ ] Definir y documentar política oficial para VRF que no resuelve (¿reembolso? ¿timeout del lado del agente API?) — el skill ya da guía provisional (~10 min → /contract/health, re-poll después).
+- [ ] Aclarar en el API qué pasa con un 500 después de pago liquidado (¿doble cobro en retry? ¿reembolso?).
+
 ## Producto
 
 - [ ] Frontend incompleto (marcado en README) — decidir si terminarlo o abrazar "API-first para agentes" como posicionamiento.
