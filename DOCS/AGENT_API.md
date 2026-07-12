@@ -439,3 +439,13 @@ See [packages/agent/scripts/README.md](../packages/agent/scripts/README.md) for 
 | spin:402 | `yarn agent:spin:402` | POST /spinWith1USDC without payment; expects 402 |
 | spin:paid | `yarn agent:spin:paid` | POST /spinWith1USDC with x402 (1.1 USDC). Requires `PAYER_PRIVATE_KEY`. |
 | claim:paid | `yarn agent:claim:paid` | POST /claim with x402 (0.1 USDC). Requires `PAYER_PRIVATE_KEY`. |
+
+## Operational policies
+
+### Unresolved rounds (VRF pending)
+
+A spin's round lives on-chain and its `requestId` **never expires** — it resolves whenever Chainlink VRF delivers. The typical cause of a long-pending round is an underfunded VRF subscription. `GET /round` helps diagnose this: when `resolved` is `false` the response includes a `pending` object with `vrfSubscriptionFunded` (boolean) and guidance. Client policy: after ~10 minutes unresolved, stop tight-polling and re-poll later; never re-spin to "replace" a pending round. Winnings from a late-resolving round accrue normally to the player.
+
+### Execution failed after a settled x402 payment
+
+The payment middleware settles **before** the handler runs, so a `5xx` from `/spinWith1USDC` or `/claim` means the client paid without receiving the service. Behavior: the response includes a `paymentNote` field telling the client not to retry-pay repeatedly, and an automatic Telegram ops alert fires with the payer address, player/user and error. **Policy: failed executions are refunded manually from the Executor wallet** (1.1 USDC for spins, 0.1 for claims) after ops review. Clients should retry at most once and then report.

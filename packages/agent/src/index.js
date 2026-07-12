@@ -18,6 +18,7 @@ import rateLimit from "express-rate-limit";
 import { ethers } from "ethers";
 import { generateJwt } from "@coinbase/cdp-sdk/auth";
 import { paymentMiddleware, x402ResourceServer } from "@x402/express";
+import { sendTelegramAlert } from "./utils/notify.js";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { SlotMachineV2Abi, VRFCoordinatorAbi } from "./utils/abi.js";
@@ -265,6 +266,21 @@ function claimErrorStatus(err) {
  * POST /spinWith1USDC
  * Flow: 1) x402 verifies payment 2) executeSpin service 3) return result
  */
+/**
+ * Extrae la dirección del pagador del header X-PAYMENT (x402), si existe.
+ * Solo para diagnóstico/alertas — el middleware ya validó el pago.
+ */
+function x402PayerFromHeader(req) {
+  try {
+    const h = req.header("X-PAYMENT");
+    if (!h) return null;
+    const decoded = JSON.parse(Buffer.from(h, "base64").toString("utf8"));
+    return decoded?.payload?.authorization?.from ?? null;
+  } catch {
+    return null;
+  }
+}
+
 app.post("/spinWith1USDC", async (req, res) => {
   try {
     const { player, referral } = req.body || {};
@@ -284,6 +300,17 @@ app.post("/spinWith1USDC", async (req, res) => {
       payload.details = err.message
         .replace("Contract unhealthy: ", "")
         .split("; ");
+    }
+    // Si el handler corrió es porque el pago x402 ya se verificó/liquidó:
+    // el cliente pagó sin recibir spin → alertar ops para reembolso manual
+    // (política en DOCS/AGENT_API.md) y avisarle al cliente que no re-pague.
+    if (req.header("X-PAYMENT")) {
+      payload.paymentNote =
+        "Your x402 payment settled but the spin failed. Do NOT retry-pay repeatedly: ops has been alerted and failed executions are refunded manually.";
+      sendTelegramAlert(
+        "spin-failed-after-payment",
+        `⚠️ Spin FALLÓ tras pago x402 liquidado\nplayer=${req.body?.player}\npayer=${x402PayerFromHeader(req) ?? "?"}\nerror=${err.message}\n→ Reembolsar 1.1 USDC manualmente desde el Executor.`,
+      ).catch(() => {});
     }
     return res.status(status).json(payload);
   }
@@ -314,6 +341,16 @@ app.post("/claim", async (req, res) => {
     if (status === 503) {
       payload.error = "Executor insufficient";
       payload.details = [err.message];
+    }
+    // Pago liquidado + ejecución fallida → alerta ops (reembolso manual),
+    // excepto "Nothing to claim", que es un error del cliente, no nuestro.
+    if (req.header("X-PAYMENT") && !err.message.startsWith("Nothing to claim")) {
+      payload.paymentNote =
+        "Your x402 payment settled but the claim failed. Do NOT retry-pay repeatedly: ops has been alerted and failed executions are refunded manually.";
+      sendTelegramAlert(
+        "claim-failed-after-payment",
+        `⚠️ Claim FALLÓ tras pago x402 liquidado\nuser=${req.body?.user}\npayer=${x402PayerFromHeader(req) ?? "?"}\nerror=${err.message}\n→ Reembolsar 0.1 USDC manualmente desde el Executor.`,
+      ).catch(() => {});
     }
     return res.status(status).json(payload);
   }
@@ -374,7 +411,7 @@ app.get("/round", readOnlyRateLimit, async (req, res) => {
     const resolved = await slotMachine.isResolved(requestId);
     const round = await slotMachine.getRoundInfo(requestId);
 
-    return res.json({
+    const response = {
       requestId,
       resolved,
       round: {
@@ -386,7 +423,27 @@ app.get("/round", readOnlyRateLimit, async (req, res) => {
         hasWon: round.hasWon,
         prize: round.prize.toString(),
       },
-    });
+    };
+
+    // Ronda sin resolver: diagnóstico inline. La causa típica de un atasco es
+    // la suscripción VRF sin fondos; la ronda vive on-chain y el requestId no
+    // caduca — resuelve cuando VRF entrega.
+    if (!resolved) {
+      response.pending = {
+        note: "Round is on-chain and the requestId never expires; it resolves when Chainlink VRF delivers. If vrfSubscriptionFunded is false, resolution is delayed until the subscription is topped up — re-poll later, do not re-spin.",
+      };
+      if (VRF_SUBSCRIPTION_ID) {
+        try {
+          const sub = await vrfCoordinator.getSubscription(VRF_SUBSCRIPTION_ID);
+          response.pending.vrfSubscriptionFunded =
+            sub.nativeBalance.gt(0) || sub.balance.gt(0);
+        } catch {
+          // diagnóstico opcional: no romper /round si el coordinator no responde
+        }
+      }
+    }
+
+    return res.json(response);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

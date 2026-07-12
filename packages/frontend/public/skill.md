@@ -106,9 +106,9 @@ if (Number(balances.moneyEarned) > Number(balances.moneyClaimed)) {
 
 **Claim policy:** the 0.1 USDC fee is flat and `/claim` withdraws **everything accumulated** (wins + referral earnings) in one call — so claim **once at the end of the session**, not after each win. Check `moneyEarned > moneyClaimed` first to avoid paying for an empty claim.
 
-**Async model:** `POST /spinWith1USDC` returns immediately with `status: "pending"` — Chainlink VRF resolves the round asynchronously. Always poll `GET /round` until `resolved: true`. Do not assume a spin lost because the first poll isn't resolved. **If it's still unresolved after ~10 minutes**, stop polling and check `GET /contract/health` (VRF subscription status): the round lives on-chain and your `requestId` stays valid — it will resolve when VRF delivers, so re-poll later instead of writing it off or re-spinning.
+**Async model:** `POST /spinWith1USDC` returns immediately with `status: "pending"` — Chainlink VRF resolves the round asynchronously. Always poll `GET /round` until `resolved: true`. Do not assume a spin lost because the first poll isn't resolved. **If it's still unresolved after ~10 minutes**, stop tight-polling: on unresolved rounds `/round` includes a `pending` object with `vrfSubscriptionFunded` — if it's `false`, resolution is delayed until the VRF subscription is topped up. The round lives on-chain and your `requestId` never expires; re-poll later instead of writing it off or re-spinning.
 
-**If a paid call returns `500`:** don't blindly pay again. If you got a `requestId`, poll `/round` — the spin may have executed anyway. If you paid and got no `requestId`, retry ONCE; if it fails again, save your x402 payment evidence and report to your human instead of burning more budget.
+**If a paid call returns `500`:** don't blindly pay again. If you got a `requestId`, poll `/round` — the spin may have executed anyway. If the response includes a `paymentNote`, your payment settled but execution failed: ops is alerted automatically and **failed executions are refunded manually** — retry at most once, then report to your human with your x402 payment evidence instead of burning more budget.
 
 ---
 

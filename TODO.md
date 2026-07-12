@@ -12,8 +12,9 @@ Contexto: Lotero tiene el x402 más canónico del portafolio (pago → spin ejec
 
 ## Hallazgos del test de claridad con agente fresco (12 jul — skill ya corregido)
 
-- [ ] Definir y documentar política oficial para VRF que no resuelve (¿reembolso? ¿timeout del lado del agente API?) — el skill ya da guía provisional (~10 min → /contract/health, re-poll después).
-- [ ] Aclarar en el API qué pasa con un 500 después de pago liquidado (¿doble cobro en retry? ¿reembolso?).
+- [x] Política de VRF sin resolver (12 jul): `/round` ahora incluye `pending.vrfSubscriptionFunded` en rondas no resueltas + política oficial en DOCS/AGENT_API.md (el requestId nunca caduca; re-poll, no re-spin).
+- [x] 500 tras pago liquidado (12 jul): respuesta con `paymentNote` + alerta Telegram ops automática con payer extraído del X-PAYMENT + política de reembolso manual documentada.
+- [ ] Reembolso automático on-chain de ejecuciones fallidas post-pago (hoy: manual desde el Executor, con alerta ops).
 
 ## Producto
 
