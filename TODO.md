@@ -12,11 +12,16 @@ Contexto: Lotero tiene el x402 más canónico del portafolio (pago → spin ejec
 
 ## Hallazgos del test de claridad con agente fresco (12 jul — skill ya corregido)
 
+- [x] MCP server construido y probado (12 jul): `mcp/` con 5 tools (spin/claim x402, get_round, get_balances, get_contract_health) y **límite de spins por sesión ejecutable** (LOTERO_MAX_SPINS_PER_SESSION, default 10) como guardrail. `player` default = wallet del humano.
+- [ ] **Publicar `lotero-mcp`**: `cd mcp && npm publish` → `mcp-publisher login github` (si expiró) → `mcp-publisher publish`. Nombre libre en npm (verificado); mcpName y description ≤100 ya aplicados.
+
 - [x] Política de VRF sin resolver (12 jul): `/round` ahora incluye `pending.vrfSubscriptionFunded` en rondas no resueltas + política oficial en DOCS/AGENT_API.md (el requestId nunca caduca; re-poll, no re-spin).
 - [x] 500 tras pago liquidado (12 jul): respuesta con `paymentNote` + alerta Telegram ops automática con payer extraído del X-PAYMENT + política de reembolso manual documentada.
 - [ ] Reembolso automático on-chain de ejecuciones fallidas post-pago (hoy: manual desde el Executor, con alerta ops).
 
 ## Producto
+
+- [ ] **🐛 INVESTIGAR: `/contract/health` y `/player/:address/balances` devuelven 500 en producción** (detectado 12 jul armando el MCP): error ethers "missing revert data in call exception" — `/round` sí funciona, así que huele a RPC de Base degradado en algunas llamadas o revert en esos getters. Revisar logs del server y el FallbackProvider.
 
 - [ ] Frontend incompleto (marcado en README) — decidir si terminarlo o abrazar "API-first para agentes" como posicionamiento.
 

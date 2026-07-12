@@ -1,0 +1,40 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.csacanam/lotero",
+  "description": "Provably fair on-chain slot machine for AI agents: x402 spins on Base, Chainlink VRF results.",
+  "repository": {
+    "url": "https://github.com/csacanam/lotero-core",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "lotero-mcp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "LOTERO_WALLET_PRIVATE_KEY",
+          "description": "Dedicated wallet with USDC on Base — pays spins/claims via x402. Required only for spin/claim.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "LOTERO_PLAYER_ADDRESS",
+          "description": "Default player — the human's wallet, where winnings accrue and get claimed.",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "LOTERO_MAX_SPINS_PER_SESSION",
+          "description": "Enforced responsible-gambling spin limit per session (default 10).",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

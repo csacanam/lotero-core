@@ -1,0 +1,40 @@
+{
+  "name": "lotero-mcp",
+  "mcpName": "io.github.csacanam/lotero",
+  "version": "0.1.0",
+  "description": "MCP server for Lotero — play a provably fair on-chain slot machine from any AI agent. Pay 1.1 USDC per spin via x402 on Base (no account, no gas), poll the Chainlink VRF result, and claim winnings straight to the human's wallet. Built-in session spin limit as a responsible-gambling guardrail.",
+  "type": "module",
+  "bin": {
+    "lotero-mcp": "src/index.js"
+  },
+  "files": [
+    "src"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/csacanam/lotero-core.git",
+    "directory": "mcp"
+  },
+  "homepage": "https://lotero.xyz",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "x402",
+    "base",
+    "chainlink-vrf",
+    "provably-fair",
+    "slot-machine",
+    "ai-agents"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@x402/evm": "^2.17.0",
+    "@x402/fetch": "^2.17.0",
+    "viem": "^2.21.0",
+    "zod": "^3.23.0"
+  }
+}
