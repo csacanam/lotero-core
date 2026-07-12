@@ -44,9 +44,12 @@ Provably fair on-chain slot machine on **Base mainnet**. You pay per spin via x4
 
 ### Step 0 — Wallet setup
 
-1. Use a **dedicated EVM wallet** for the agent (do NOT use your human's main wallet).
+1. Use a **dedicated EVM wallet** for the agent (do NOT use your human's main wallet). This wallet only pays the x402 fees.
 2. **NEVER display the private key in chat.** Write it directly to a `.env` file.
-3. Ask your human to fund it with USDC on **Base** (1.1 USDC per spin + 0.1 per claim; no ETH needed — everything is gasless via x402).
+3. Ask your human to fund it with USDC on **Base** (1.1 USDC per spin + 0.1 for the final claim; no ETH needed — everything is gasless via x402).
+4. **Ask your human for THEIR wallet address and use it as `player`.** The payer and the player are independent: wins accrue to `player`, and `/claim` sends the USDC to that address. With `player` = your human's wallet, winnings land directly in their pocket — otherwise they'd be stuck in the agent's wallet, which has no ETH for gas to forward them.
+
+**Budget accounting:** count the claim inside the authorized budget. Example: 5 USDC authorized → 4 spins (4.40) + 1 claim (0.10) = 4.50 committed.
 
 | Network | Chain ID | USDC address |
 |---|---|---|
@@ -67,7 +70,8 @@ import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { privateKeyToAccount } from "viem/accounts";
 
-const signer = privateKeyToAccount(process.env.PRIVATE_KEY);
+const signer = privateKeyToAccount(process.env.PRIVATE_KEY); // agent wallet: pays x402 only
+const PLAYER = "0xYOUR_HUMANS_WALLET"; // wins accrue and get claimed HERE
 const client = new x402Client();
 registerExactEvmScheme(client, { signer });
 const fetchWithPayment = wrapFetchWithPayment(fetch, client);
@@ -76,7 +80,7 @@ const fetchWithPayment = wrapFetchWithPayment(fetch, client);
 const res = await fetchWithPayment("https://api.lotero.xyz/spinWith1USDC", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ player: signer.address, referral: null }),
+  body: JSON.stringify({ player: PLAYER, referral: null }),
 });
 const { requestId } = await res.json();
 
@@ -89,18 +93,22 @@ do {
 } while (!result.resolved);
 console.log(result.round); // { number1, number2, number3, hasWon, prize }
 
-// 3. Claim accumulated winnings (pays 0.1 USDC via x402, gasless)
-const balances = await fetch(`https://api.lotero.xyz/player/${signer.address}/balances`).then((r) => r.json());
+// 3. Claim accumulated winnings (pays 0.1 USDC via x402, gasless — USDC goes to PLAYER)
+const balances = await fetch(`https://api.lotero.xyz/player/${PLAYER}/balances`).then((r) => r.json());
 if (Number(balances.moneyEarned) > Number(balances.moneyClaimed)) {
   await fetchWithPayment("https://api.lotero.xyz/claim", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user: signer.address }),
+    body: JSON.stringify({ user: PLAYER }),
   });
 }
 ```
 
-**Async model:** `POST /spinWith1USDC` returns immediately with `status: "pending"` — Chainlink VRF resolves the round asynchronously. Always poll `GET /round` until `resolved: true`. Do not assume a spin lost because the first poll isn't resolved.
+**Claim policy:** the 0.1 USDC fee is flat and `/claim` withdraws **everything accumulated** (wins + referral earnings) in one call — so claim **once at the end of the session**, not after each win. Check `moneyEarned > moneyClaimed` first to avoid paying for an empty claim.
+
+**Async model:** `POST /spinWith1USDC` returns immediately with `status: "pending"` — Chainlink VRF resolves the round asynchronously. Always poll `GET /round` until `resolved: true`. Do not assume a spin lost because the first poll isn't resolved. **If it's still unresolved after ~10 minutes**, stop polling and check `GET /contract/health` (VRF subscription status): the round lives on-chain and your `requestId` stays valid — it will resolve when VRF delivers, so re-poll later instead of writing it off or re-spinning.
+
+**If a paid call returns `500`:** don't blindly pay again. If you got a `requestId`, poll `/round` — the spin may have executed anyway. If you paid and got no `requestId`, retry ONCE; if it fails again, save your x402 payment evidence and report to your human instead of burning more budget.
 
 ---
 
