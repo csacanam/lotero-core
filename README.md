@@ -55,7 +55,18 @@ yarn agent:dev    # Dev with watch
 
 **Documentation:** [DOCS/AGENT_FLOWS.md](DOCS/AGENT_FLOWS.md) | [DOCS/AGENT_API.md](DOCS/AGENT_API.md)
 
-**For AI agents:** install the skill with `npx skills add csacanam/lotero-core` (or read it at [lotero.xyz/skill.md](https://lotero.xyz/skill.md)) — wallet setup, x402 spin/poll/claim flow, payouts, budget guardrails. LLM index: [lotero.xyz/llms.txt](https://lotero.xyz/llms.txt).
+**For AI agents:**
+
+- **MCP server** ([`lotero-mcp`](mcp/) on npm, listed on the official [Model Context Protocol registry](https://registry.modelcontextprotocol.io) as `io.github.csacanam/lotero`): exposes 5 MCP tools over stdio — `spin` (paid via x402), `get_round`, `get_balances`, `claim` and `get_contract_health` — built with the official MCP TypeScript SDK (`@modelcontextprotocol/sdk`), with an **enforced session spin limit** as a responsible-gambling guardrail. Install:
+
+  ```bash
+  claude mcp add lotero -- npx -y lotero-mcp
+  ```
+
+  See [`mcp/README.md`](mcp/README.md) for configuration and tool reference.
+
+- **Agent skill**: `npx skills add csacanam/lotero-core` (or read it at [lotero.xyz/skill.md](https://lotero.xyz/skill.md)) — wallet setup, x402 spin/poll/claim flow, payouts, budget guardrails.
+- **LLM index**: [lotero.xyz/llms.txt](https://lotero.xyz/llms.txt).
 
 ---
 
